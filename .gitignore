@@ -4,14 +4,10 @@ frontend/node_modules/
 # backend
 backend/venv/
 **__pycache__
-**/migrations/**
-!**/migrations
-!**/migrations/__init__.py
-backend/media/
+**/migrations/versions/
 
 # general
 **.idea
 **.vscode
 **.data
-.prettierrc
 .env
