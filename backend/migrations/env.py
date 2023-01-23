@@ -5,7 +5,7 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from backend import database
+import database
 from app.auth import models
 from app.events import models
 

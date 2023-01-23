@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field
 
 
 class UserBase(BaseModel):
-    username: str
     email: str
     
     class Config:
@@ -14,6 +13,7 @@ class UserCreate(UserBase):
     
 
 class User(UserBase):
+    username: str | None
     phone: str | None
     first_name: str | None
     last_name: str | None
@@ -25,8 +25,9 @@ class User(UserBase):
     
 class Token(BaseModel):
     access_token: str
-    token_type: str
+    refresh_token: str
 
 
 class TokenData(BaseModel):
-    username: str | None = None
+    sub: str = None
+    exp: int = None

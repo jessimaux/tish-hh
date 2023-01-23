@@ -23,6 +23,7 @@ class User(Base):
     
     events = relationship('Event', secondary="events__signs", back_populates='users')
     
+    is_verifed = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     
     
