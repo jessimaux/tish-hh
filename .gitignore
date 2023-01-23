@@ -1,0 +1,17 @@
+# frontend
+frontend/node_modules/
+
+# backend
+backend/venv/
+**__pycache__
+**/migrations/**
+!**/migrations
+!**/migrations/__init__.py
+backend/media/
+
+# general
+**.idea
+**.vscode
+**.data
+.prettierrc
+.env
