@@ -1,8 +1,8 @@
-from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, TIMESTAMP, text
 from sqlalchemy.orm import relationship
 
 from database import Base
-from app.events.models import Sign
+from apps.events.models import Sign
 
 
 class User(Base):
@@ -25,6 +25,11 @@ class User(Base):
     
     is_verifed = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    
+    created_at = Column(TIMESTAMP(timezone=True),
+                        nullable=False, server_default=text("now()"))
+    updated_at = Column(TIMESTAMP(timezone=True),
+                        nullable=False, server_default=text("now()"))
     
     
 class Link(Base):

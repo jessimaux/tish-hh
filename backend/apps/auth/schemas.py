@@ -1,8 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr
 
 
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
+    username: str
     
     class Config:
         orm_mode = True
@@ -13,7 +14,6 @@ class UserCreate(UserBase):
     
 
 class User(UserBase):
-    username: str | None
     phone: str | None
     first_name: str | None
     last_name: str | None

@@ -10,4 +10,6 @@ backend/venv/
 **.idea
 **.vscode
 **.data
-.env
+
+# env
+backend/.env
