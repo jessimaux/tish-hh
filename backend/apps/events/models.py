@@ -100,7 +100,7 @@ class Category(Base):
     __tablename__ = "categories"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255))
+    name = Column(String(255), unique=True, index=True)
     
     events = relationship("Event", backref="category")
     

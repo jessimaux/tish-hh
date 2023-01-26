@@ -31,7 +31,7 @@ async def create_user(user: schemas.UserCreate, request: Request, db: Session = 
     db.commit()
     db.refresh(user_obj)
     await send_verification_code(user_obj, request, db)
-    return user
+    return user_obj
 
 
 @router.post("/users/token/", tags=['users'], response_model=schemas.Token)
