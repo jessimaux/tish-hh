@@ -6,3 +6,10 @@ class CategoryBase(BaseModel):
     
     class Config:
         orm_mode = True
+        
+        
+class TagBase(BaseModel):
+    name: str
+    
+    class Config:
+        orm_mode = True

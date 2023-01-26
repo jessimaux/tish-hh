@@ -11,8 +11,9 @@ from . import models, schemas, utils, dependencies
 from email_client import send_verification_code
 
 # TODO: 
-# Complete jwt auth
-# at in coockie, rt localstorage
+# Complete jwt auth: at in coockie, rt localstorage
+# Permission for register, refresh
+# Change password, password email reset
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token/")
