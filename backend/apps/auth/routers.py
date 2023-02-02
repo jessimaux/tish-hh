@@ -18,7 +18,7 @@ from email_client import send_verification_code
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token/")
 
-@router.post("/users/reg/", tags=['users'], response_model=schemas.User)
+@router.post("/users/reg/", tags=['users'], response_model=schemas.UserRetrieve)
 async def create_user(user: schemas.UserCreate, request: Request, db: Session = Depends(app_dependencies.get_db)):
     check_email = db.query(models.User).filter(models.User.email == user.email).first()
     if check_email:
@@ -63,17 +63,17 @@ def refresh_token(token: str, request: Request, response: Response, db: Session 
     if not user_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect username or password")
-    access_token = utils.create_access_token(user.email)
+    access_token = utils.create_access_token(user_obj.email)
     return {'access_token': access_token}
 
 
-@router.get("/users/me/", tags=['users'], response_model=schemas.User)
-def user(current_user: schemas.User = Depends(dependencies.get_current_active_user)):
+@router.get("/users/me/", tags=['users'], response_model=schemas.UserRetrieve)
+def get_user(current_user: schemas.UserRetrieve= Depends(dependencies.get_current_active_user)):
     return current_user
 
 
-@router.put('/users/me/', tags=['users'], response_model=schemas.User)
-def update_user(user: schemas.User, current_user: schemas.User = Depends(dependencies.get_current_active_user), db: Session = Depends(app_dependencies.get_db)):
+@router.put('/users/me/', tags=['users'], response_model=schemas.UserRetrieve)
+def update_user(user: schemas.UserRetrieve, current_user: schemas.UserRetrieve = Depends(dependencies.get_current_active_user), db: Session = Depends(app_dependencies.get_db)):
     for key, value in user:
         setattr(current_user, key, value)
     db.commit()

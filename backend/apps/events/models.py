@@ -23,7 +23,7 @@ class Event(Base):
     is_template = Column(Boolean)
     is_announcement = Column(Boolean)
 
-    users = relationship('User', secondary="events__signs", back_populates='events')
+    users = relationship('Sign', back_populates='event')
     tags = relationship('Tag', secondary="events__tags", back_populates="events")
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -89,12 +89,14 @@ class QA(Base):
     
 class Sign(Base):
     __tablename__ = "events__signs"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     event_id = Column(Integer, ForeignKey("events.id"))
     status = Column(String(255))
     
+    user = relationship("User", back_populates="events")
+    event = relationship("Event", back_populates="users")
     
 class Category(Base):
     __tablename__ = "categories"
@@ -109,7 +111,7 @@ class Tag(Base):
     __tablename__ = "tags"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255))
+    name = Column(String(255), unique=True)
     
     events = relationship("Event", secondary="events__tags", back_populates="tags")
 

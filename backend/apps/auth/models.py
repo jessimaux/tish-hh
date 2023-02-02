@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, TIMESTAMP, text
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from database import Base
 from apps.events.models import Sign
@@ -21,15 +22,13 @@ class User(Base):
     city = Column(String(255))
     age = Column(Integer)
     
-    events = relationship('Event', secondary="events__signs", back_populates='users')
+    events = relationship('Sign', back_populates='user')
     
     is_verifed = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     
-    created_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, server_default=text("now()"))
-    updated_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, server_default=text("now()"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     
 class Link(Base):
