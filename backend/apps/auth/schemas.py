@@ -22,7 +22,17 @@ class UserRetrieve(UserBase):
     region: str | None
     city: str | None
     age: str | None
-        
+    
+
+class UserUpdate(UserBase):
+    phone: str | None
+    first_name: str | None
+    last_name: str | None
+    country: str | None
+    region: str | None
+    city: str | None
+    age: str | None
+    
     
 class Token(BaseModel):
     access_token: str
@@ -30,5 +40,5 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    sub: str = None
+    email: str = None
     exp: int = None

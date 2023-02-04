@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
 from jose import jwt
 
@@ -21,7 +22,7 @@ def create_access_token(email: str, expires_delta: int = None):
     else:
         expires_delta = datetime.utcnow() + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode = {"exp": expires_delta, "sub": str(email)}
+    to_encode = {"exp": expires_delta, "email": str(email)}
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, settings.JWT_ALGORITHM)
     return encoded_jwt
 
@@ -31,12 +32,13 @@ def create_refresh_token(email: str, expires_delta: int = None):
     else:
         expires_delta = datetime.utcnow() + timedelta(minutes=settings.JWT_REFRESH_TOKEN_EXPIRE_MINUTES)
     
-    to_encode = {"exp": expires_delta, "sub": str(email)}
+    to_encode = {"exp": expires_delta, "email": str(email)}
     encoded_jwt = jwt.encode(to_encode, settings.JWT_REFRESH_SECRET_KEY, settings.JWT_ALGORITHM)
     return encoded_jwt
 
-def authenticate_user(db: Session, username: str, password: str):
-    user = db.query(models.User).filter(models.User.username == username).first()
+async def authenticate_user(session: AsyncSession, username: str, password: str):
+    user_res = await session.execute(select(models.User).where(models.User.username == username))
+    user = user_res.scalar()
     if not user:
         return False
     if not verify_password(password, user.password):

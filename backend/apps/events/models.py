@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey, Table
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -13,7 +13,7 @@ class Event(Base):
     description = Column(String)
     address = Column(String)
     
-    category_id = Column(Integer, ForeignKey("categories.id"))
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete='CASCADE'))
     
     repeatable = Column(Boolean)
     repeatable_type = Column(String(255))
@@ -37,7 +37,7 @@ class Date(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     date = Column(DateTime(timezone=True))
-    event_id = Column(Integer, ForeignKey("events.id"))
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     
     event = relationship("Event", backref="dates")
     
@@ -48,7 +48,7 @@ class Characteristic(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255))
     description = Column(String(255))
-    event_id = Column(Integer, ForeignKey("events.id"))
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     
     event = relationship("Event", backref="characteristics")
     
@@ -59,7 +59,7 @@ class Link(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255))
     link = Column(String)
-    event_id = Column(Integer, ForeignKey("events.id"))
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     
     event = relationship("Event", backref="links")
     
@@ -71,7 +71,7 @@ class Contact(Base):
     name = Column(String(255))
     description = Column(String(255))
     contact = Column(String(255))
-    event_id = Column(Integer, ForeignKey("events.id"))
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     
     event = relationship("Event", backref="contacts")
     
@@ -82,7 +82,7 @@ class QA(Base):
     id = Column(Integer, primary_key=True, index=True)
     quest = Column(String(255))
     answer = Column(String(255))
-    event_id = Column(Integer, ForeignKey("events.id"))
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     
     event = relationship("Event", backref="qas")
 
@@ -91,8 +91,8 @@ class Sign(Base):
     __tablename__ = "events__signs"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    event_id = Column(Integer, ForeignKey("events.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     status = Column(String(255))
     
     user = relationship("User", back_populates="events")
@@ -120,5 +120,5 @@ class TagEvent(Base):
     __tablename__ = "events__tags"
     
     id = Column(Integer, primary_key=True, index=True)
-    event_id = Column(Integer, ForeignKey("events.id"))
-    tag_id = Column(Integer, ForeignKey("tags.id"))
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
+    tag_id = Column(Integer, ForeignKey("tags.id", ondelete='CASCADE'))

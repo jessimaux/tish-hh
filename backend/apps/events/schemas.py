@@ -2,8 +2,6 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Literal
 
-from apps.auth.schemas import UserRetrieve
-
 
 class CategoryBase(BaseModel):
     name: str

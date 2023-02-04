@@ -29,7 +29,7 @@ env = Environment(
     autoescape=select_autoescape(['html', 'xml'])
 )
 
-async def send_verification_code(user: User, request: Request, db: Session):
+async def send_verification_code(user: User, request: Request, session: Session):
     template = env.get_template(f'verification.html')
     
     to_encode = {"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=10), "email": str(user.email)}
@@ -53,6 +53,6 @@ async def send_verification_code(user: User, request: Request, db: Session):
         await fm.send_message(message)
     except Exception as error:
         user.verification_code = None
-        db.commit()
+        session.commit()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail='There was an error sending email')

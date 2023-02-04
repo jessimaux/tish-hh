@@ -1,8 +1,6 @@
 import os
 from dotenv import load_dotenv
 
-from pydantic import BaseModel
-
 load_dotenv()
 
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
