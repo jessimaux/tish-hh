@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+BASEDIR = os.path.dirname(__file__)
+MEDIADIR = os.path.join(BASEDIR, 'media/')
+
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
 JWT_REFRESH_SECRET_KEY = os.getenv('JWT_REFRESH_SECRET_KEY')
 JWT_ALGORITHM = "HS256"

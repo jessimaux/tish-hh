@@ -1,4 +1,5 @@
 import datetime
+import os
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy import select
@@ -12,6 +13,7 @@ from .schemas import *
 from .utils import *
 from .dependencies import *
 from email_client import send_verification_code
+from utils import handle_file_upload
 
 # TODO: 
 # Complete jwt auth: at in coockie, rt localstorage
@@ -95,6 +97,21 @@ async def update_user(user: UserUpdate,
     await session.commit()
     return current_user
 
+
+# TODO: add delete files
+@router.put('/users/me/photo', tags=['users'])
+async def update_photo(file: UploadFile,
+                      current_user: UserRetrieve = Depends(get_current_active_user), 
+                      session: AsyncSession = Depends(get_session)):
+    old_file = current_user.image
+    try:
+        current_user.image = await handle_file_upload(file, 'auth/profile/', ['image/jpeg', 'image/png'])
+    finally:
+        if os.path.exists(os.path.join(settings.MEDIADIR, 'auth/profile', old_file)):
+            os.remove(os.path.join(settings.MEDIADIR, 'auth/profile', old_file))
+    await session.commit()
+    return current_user.image
+    
 
 @router.get('/users/verifyemail/{token}/', tags=['users'])
 async def verify_me(token: str, 

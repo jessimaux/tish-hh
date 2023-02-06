@@ -14,13 +14,16 @@ class User(Base):
     phone = Column(String(255), unique=True)
     password = Column(String(255))
     
-    first_name = Column(String(255))
-    last_name = Column(String(255))
+    name = Column(String(255))
     country = Column(String(255))
     region = Column(String(255))
     city = Column(String(255))
-    age = Column(Integer)
+    age = Column(Integer, nullable=True)
+    gender = Column(Boolean, nullable=True)
+    bio = Column(String(255))
+    image = Column(String, nullable=True)
     
+    # TODO: maybe backref?
     events = relationship('Sign', back_populates='user')
     
     is_verifed = Column(Boolean, default=False)
