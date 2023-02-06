@@ -144,7 +144,7 @@ async def get_event(id: int,
 async def create_event(event: EventCreate, 
                        current_user: UserRetrieve = Depends(get_current_active_user),
                        session: AsyncSession = Depends(get_session)):        
-    event_obj = await create_event(event, session)
+    event_obj = await crud.create_event(event, session)
     return event_obj
 
 @router.put("/events/{id}", tags=['events'], response_model=EventRetrieve)
@@ -152,7 +152,7 @@ async def edit_event(id: int,
                      event: EventCreate,
                      current_user: UserRetrieve = Depends(get_current_active_user),
                      session: AsyncSession = Depends(get_session)):
-    event_obj = await edit_event(id, event, session)
+    event_obj = await crud.edit_event(id, event, session)
     return event_obj
 
 @router.delete('/events/{id}', tags=['events'])

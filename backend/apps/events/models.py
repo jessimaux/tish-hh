@@ -14,6 +14,7 @@ class Event(Base):
     address = Column(String)
     
     category_id = Column(Integer, ForeignKey("categories.id", ondelete='CASCADE'))
+    category = relationship('Category', backref='event', lazy='joined')
     
     repeatable = Column(Boolean)
     repeatable_type = Column(String(255))
@@ -23,8 +24,13 @@ class Event(Base):
     is_template = Column(Boolean)
     is_announcement = Column(Boolean)
 
-    users = relationship('Sign', back_populates='event')
-    tags = relationship('Tag', secondary="events__tags", back_populates="events")
+    users = relationship('Sign', back_populates='event', lazy="joined")
+    tags = relationship('Tag', secondary="events__tags", back_populates="events", lazy="joined")
+    dates = relationship("Date", backref="event", lazy="joined")
+    characteristics = relationship('Characteristic', backref='event', lazy='joined')
+    links = relationship('EventLink', backref='event', lazy='joined')
+    contacts = relationship('Contact', backref='event', lazy='joined')
+    qas = relationship('QA', backref='event', lazy='joined')
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     created_by = Column(Integer, ForeignKey("users.id"))
@@ -39,8 +45,6 @@ class Date(Base):
     date = Column(DateTime(timezone=True))
     event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     
-    event = relationship("Event", backref="dates")
-    
     
 class Characteristic(Base):
     __tablename__ = "events__characteristics"
@@ -50,18 +54,14 @@ class Characteristic(Base):
     description = Column(String(255))
     event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     
-    event = relationship("Event", backref="characteristics")
     
-    
-class Link(Base):
+class EventLink(Base):
     __tablename__ = "events__links"
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255))
     link = Column(String)
     event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
-    
-    event = relationship("Event", backref="links")
     
     
 class Contact(Base):
@@ -73,8 +73,6 @@ class Contact(Base):
     contact = Column(String(255))
     event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     
-    event = relationship("Event", backref="contacts")
-    
     
 class QA(Base):
     __tablename__ = "events__qa"
@@ -83,8 +81,6 @@ class QA(Base):
     quest = Column(String(255))
     answer = Column(String(255))
     event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
-    
-    event = relationship("Event", backref="qas")
 
     
 class Sign(Base):
@@ -103,8 +99,6 @@ class Category(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True)
-    
-    events = relationship("Event", backref="category")
     
 
 class Tag(Base):

@@ -29,7 +29,7 @@ async def create_event(event: EventCreate, session: AsyncSession):
                                                         event_id=event_obj.id))
     # for fg links
     for link in event.links:
-        event_obj.links.append(Link(name=link.name,
+        event_obj.links.append(EventLink(name=link.name,
                                     link=link.link,
                                     event_id=event_obj.id))
     # for fg contacts
@@ -82,7 +82,7 @@ async def edit_event(id: int, event: EventCreate, session: AsyncSession):
     # for fg links
     links = list()
     for link in event.links:
-        links.append(Link(name=link.name,
+        links.append(EventLink(name=link.name,
                           link=link.link,
                           event_id=event_obj.id))
     event_obj.links = links
