@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from dependencies import get_session
 from apps.auth.dependencies import get_current_active_user
@@ -136,7 +137,15 @@ async def get_events(current_user: UserRetrieve = Depends(get_current_active_use
 async def get_event(id: int,
                     current_user: UserRetrieve = Depends(get_current_active_user),
                     session: AsyncSession = Depends(get_session)):
-    event_obj_res = await session.execute(select(Event).where(Event.id == id))
+    event_obj_res = await session.execute(select(Event)
+                                          .where(Event.id == id)
+                                          .options(selectinload(Event.dates), 
+                                                   selectinload(Event.links),
+                                                   selectinload(Event.characteristics),
+                                                   selectinload(Event.contacts),
+                                                   selectinload(Event.qas),
+                                                   selectinload(Event.tags),
+                                                   selectinload(Event.category)))
     event_obj = event_obj_res.scalar()
     return event_obj
 
@@ -170,7 +179,7 @@ async def delete_event(id: int,
 async def get_signs(current_user: UserRetrieve = Depends(get_current_active_user),
                     session: AsyncSession = Depends(get_session)):
     sign_res = await session.execute(select(Sign))
-    sign_objs = sign_res.scalaras().all()
+    sign_objs = sign_res.scalars().all()
     return sign_objs
 
 @router.post("/signs/", tags=['signs'], response_model=SignRetrieve)

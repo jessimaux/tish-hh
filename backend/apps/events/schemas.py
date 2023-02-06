@@ -87,6 +87,7 @@ class EventCreate(EventBase):
 
 class EventRetrieve(EventCreate):
     id: int    
+    category: CategoryBase
 
 
 class SignBase(BaseModel):
