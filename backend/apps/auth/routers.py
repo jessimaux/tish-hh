@@ -20,7 +20,6 @@ from . import crud
 # TODO:
 # Complete jwt auth: at in coockie, rt localstorage
 # Permission for register, refresh
-# Change password, password email reset
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token/")
@@ -46,7 +45,7 @@ async def create_user(user: UserCreate,
     await session.commit()
 
     # TODO: rewrite to fastapi-background
-    # await send_verification_code(user_obj, request, session)
+    await send_verification_code(user_obj, request, session)
     return user_obj
 
 
@@ -65,7 +64,8 @@ async def login_for_access_token(response: Response,
 
     response.set_cookie('access_token', access_token,
                         settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60)
-    return {"access_token": access_token, "refresh_token": refresh_token}
+    return JSONResponse({"access_token": access_token, "refresh_token": refresh_token},
+                        status_code=status.HTTP_200_OK)
 
 
 @router.get('/users/refresh/', tags=['users'])
@@ -87,7 +87,8 @@ async def refresh_token(token: str,
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect username or password")
     access_token = create_access_token(user_obj.email)
-    return {'access_token': access_token}
+    return JSONResponse({'access_token': access_token},
+                        status_code=status.HTTP_200_OK)
 
 
 @router.get("/users/me/", tags=['users'], response_model=UserRetrieve)
@@ -149,7 +150,8 @@ async def send_retrieve_password(email: str,
         )
     # TODO: rewrite to fastapi-background
     await send_retrieve_password_link(user_obj, request)
-    return {'message': 'Email to retrieve password sent'}
+    return JSONResponse({'message': 'Email to retrieve password sent'},
+                        status_code=status.HTTP_200_OK)
 
 
 @router.get('/users/retrieve_password/{token}/', tags=['users'])
@@ -173,7 +175,8 @@ async def retrieve_password(token: str,
     if not user_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid code or user doesn't exist")
-    return {"message": "Verifed to change password"}
+    return JSONResponse({"message": "Verifed to change password"},
+                        status_code=status.HTTP_200_OK)
 
 
 @router.post('/users/retrieve_password/{token}/', tags=['users'])
@@ -200,7 +203,8 @@ async def retrieve_password(token: str,
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid code or user doesn't exist")
     user_obj.password = get_hashed_password(password)
     await session.commit()
-    return {"message": "Password changed successfully"}
+    return JSONResponse({"message": "Password changed successfully"},
+                        status_code=status.HTTP_200_OK)
 
 
 @router.get('/users/verifyemail/{token}/', tags=['users'])
@@ -229,4 +233,5 @@ async def verify_me(token: str,
             status_code=status.HTTP_403_FORBIDDEN, detail='Email can only be verified once')
     user_obj.is_verifed = True
     await session.commit()
-    return {"message": "Account verified successfully"}
+    return JSONResponse({"message": "Account verified successfully"},
+                        status_code=status.HTTP_200_OK)

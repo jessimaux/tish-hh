@@ -13,7 +13,7 @@ async def handle_file_upload(file: UploadFile, upload_path: str, file_types: lis
     
     content = await file.read()
     if file.content_type not in file_types:
-        raise HTTPException(status_code=406, detail="Only .jpeg or .png  files allowed")
+        raise HTTPException(status_code=406, detail="Wrong file's extension")
     file_name = f'{uuid.uuid4().hex}{ext}'
     file_path = os.path.join(file_dir, file_name)
     file_url = settings.MEDIAURL + upload_path + file_name
