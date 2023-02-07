@@ -1,6 +1,14 @@
 from pydantic import BaseModel, EmailStr
 
 
+class LinkBase(BaseModel):
+    name: str
+    link: str
+    
+    class Config:
+        orm_mode = True
+        
+        
 class UserBase(BaseModel):
     email: str
     username: str
@@ -13,25 +21,21 @@ class UserCreate(UserBase):
     password: str
     
 
-class UserRetrieve(UserBase):
-    id: int
-    phone: str | None
-    first_name: str | None
-    last_name: str | None
-    country: str | None
-    region: str | None
-    city: str | None
-    age: str | None
-    
-
 class UserUpdate(UserBase):
     phone: str | None
-    first_name: str | None
-    last_name: str | None
-    country: str | None
-    region: str | None
-    city: str | None
+    name: str | None
+    country: str
+    region: str
+    city: str
     age: str | None
+    gender: bool | None
+    bio: str | None
+    links: list[LinkBase] | list
+    
+    
+class UserRetrieve(UserUpdate):
+    id: int
+    image: str | None
     
     
 class Token(BaseModel):

@@ -11,10 +11,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(32), unique=True, index=True)
     email = Column(String(255), unique=True, index=True)
-    phone = Column(String(255), unique=True)
+    phone = Column(String(255), unique=True, nullable=True)
     password = Column(String(255))
     
-    name = Column(String(255))
+    name = Column(String(255), nullable=True)
     country = Column(String(255))
     region = Column(String(255))
     city = Column(String(255))
@@ -25,6 +25,7 @@ class User(Base):
     
     # TODO: maybe backref?
     events = relationship('Sign', back_populates='user')
+    links = relationship("Link", backref="user", lazy="joined")
     
     is_verifed = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
@@ -40,5 +41,3 @@ class Link(Base):
     name = Column(String(255))
     link = Column(String)
     user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
-    
-    user = relationship("User", backref="links")

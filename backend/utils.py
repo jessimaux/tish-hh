@@ -15,7 +15,9 @@ async def handle_file_upload(file: UploadFile, upload_path: str, file_types: lis
     if file.content_type not in file_types:
         raise HTTPException(status_code=406, detail="Only .jpeg or .png  files allowed")
     file_name = f'{uuid.uuid4().hex}{ext}'
-    async with aiofiles.open(os.path.join(file_dir, file_name), mode='wb') as f:
+    file_path = os.path.join(file_dir, file_name)
+    file_url = settings.MEDIAURL + upload_path + file_name
+    async with aiofiles.open(file_path, mode='wb') as f:
         await f.write(content)
 
-    return file_name
+    return file_url

@@ -14,6 +14,7 @@ from .utils import *
 from .dependencies import *
 from email_client import send_verification_code
 from utils import handle_file_upload
+from . import crud
 
 # TODO: 
 # Complete jwt auth: at in coockie, rt localstorage
@@ -92,14 +93,12 @@ def get_user_me(current_user: UserRetrieve = Depends(get_current_active_user)):
 async def update_user(user: UserUpdate, 
                       current_user: UserRetrieve = Depends(get_current_active_user), 
                       session: AsyncSession = Depends(get_session)):
-    for key, value in user:
-        setattr(current_user, key, value)
-    await session.commit()
+    current_user = await crud.update_user(user, current_user, session)
     return current_user
 
 
 # TODO: add delete files
-@router.put('/users/me/photo', tags=['users'])
+@router.put('/users/me/photo/', tags=['users'])
 async def update_photo(file: UploadFile,
                       current_user: UserRetrieve = Depends(get_current_active_user), 
                       session: AsyncSession = Depends(get_session)):
