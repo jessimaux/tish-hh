@@ -19,7 +19,12 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-    
+
+
+class UserPasswordChange(BaseModel):
+    old_password: str
+    new_password: str
+        
 
 class UserUpdate(UserBase):
     phone: str | None
@@ -27,7 +32,7 @@ class UserUpdate(UserBase):
     country: str
     region: str
     city: str
-    age: str | None
+    age: int | None
     gender: bool | None
     bio: str | None
     links: list[LinkBase] | list

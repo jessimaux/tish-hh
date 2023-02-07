@@ -8,6 +8,7 @@ from .schemas import *
 async def update_user(user: UserUpdate, current_user: User, session: AsyncSession):
     # for fg links
     for link in user.links:
+        current_user.links.clear()
         current_user.links.append(Link(name=link.name,
                                        link=link.link,
                                        user_id=current_user.id))
