@@ -1,6 +1,10 @@
 from pydantic import BaseModel, EmailStr
 
 
+class PasswordRetrieveBase(BaseModel):
+    email: EmailStr
+    
+
 class LinkBase(BaseModel):
     name: str
     link: str
@@ -24,6 +28,10 @@ class UserCreate(UserBase):
 class UserPasswordChange(BaseModel):
     old_password: str
     new_password: str
+    
+
+class UserPasswordRetrieve(BaseModel):
+    new_password: str
         
 
 class UserUpdate(UserBase):
@@ -44,6 +52,10 @@ class UserRetrieve(UserUpdate):
     
     
 class Token(BaseModel):
+    token: str
+    
+    
+class TokenPare(BaseModel):
     access_token: str
     refresh_token: str
 

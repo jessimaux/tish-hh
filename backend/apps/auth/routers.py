@@ -49,7 +49,7 @@ async def create_user(user: UserCreate,
     return user_obj
 
 
-@router.post("/users/token/", tags=['users'], response_model=Token)
+@router.post("/users/token/", tags=['users'], response_model=TokenPare)
 async def login_for_access_token(response: Response,
                                  form_data: OAuth2PasswordRequestForm = Depends(),
                                  session: AsyncSession = Depends(get_session)):
@@ -64,12 +64,11 @@ async def login_for_access_token(response: Response,
 
     response.set_cookie('access_token', access_token,
                         settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60)
-    return JSONResponse({"access_token": access_token, "refresh_token": refresh_token},
-                        status_code=status.HTTP_200_OK)
+    return TokenPare(access_token, refresh_token)
 
 
 @router.get('/users/refresh/', tags=['users'])
-async def refresh_token(token: str,
+async def refresh_token(token: Token,
                         request: Request,
                         response: Response,
                         session: AsyncSession = Depends(get_session)):
@@ -87,8 +86,7 @@ async def refresh_token(token: str,
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect username or password")
     access_token = create_access_token(user_obj.email)
-    return JSONResponse({'access_token': access_token},
-                        status_code=status.HTTP_200_OK)
+    return Token(access_token)
 
 
 @router.get("/users/me/", tags=['users'], response_model=UserRetrieve)
@@ -98,8 +96,7 @@ def get_user_me(current_user: UserRetrieve = Depends(get_current_active_user)):
 
 @router.post('/users/me/update/', tags=['users'], response_model=UserRetrieve)
 async def update_user(user: UserUpdate,
-                      current_user: UserRetrieve = Depends(
-                          get_current_active_user),
+                      current_user: UserRetrieve = Depends(get_current_active_user),
                       session: AsyncSession = Depends(get_session)):
     current_user = await crud.update_user(user, current_user, session)
     return current_user
@@ -138,11 +135,11 @@ async def change_password(password_form: UserPasswordChange,
 
 
 @router.post('/users/send_retrieve_password/', tags=['users'])
-async def send_retrieve_password(email: str,
+async def send_retrieve_password(pswrd_retrieve_form: PasswordRetrieveBase,
                                  request: Request,
                                  background_tasks: BackgroundTasks,
                                  session: AsyncSession = Depends(get_session)):
-    user_res = await session.execute(select(User).where(User.email == email))
+    user_res = await session.execute(select(User).where(User.email == pswrd_retrieve_form.email))
     user_obj = user_res.scalar()
     if not user_obj:
         raise HTTPException(
@@ -181,7 +178,7 @@ async def retrieve_password(token: str,
 
 @router.post('/users/retrieve_password/{token}/', tags=['users'])
 async def retrieve_password(token: str,
-                            password: str,
+                            pswrd_form: UserPasswordRetrieve,
                             session: AsyncSession = Depends(get_session)):
     try:
         jwt_decoded = jwt.decode(
@@ -201,7 +198,7 @@ async def retrieve_password(token: str,
     if not user_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid code or user doesn't exist")
-    user_obj.password = get_hashed_password(password)
+    user_obj.password = get_hashed_password(pswrd_form.password)
     await session.commit()
     return JSONResponse({"message": "Password changed successfully"},
                         status_code=status.HTTP_200_OK)
