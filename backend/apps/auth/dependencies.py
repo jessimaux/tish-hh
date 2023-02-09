@@ -30,7 +30,7 @@ async def get_current_user(session: AsyncSession = Depends(get_session),
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user_res = await session.execute(select(User).where(User.username == token_data.email))
+    user_res = await session.execute(select(User).where(User.email == token_data.email))
     user = user_res.scalar()
     if user is None:
         raise HTTPException(

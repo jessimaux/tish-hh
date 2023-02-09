@@ -36,8 +36,8 @@ def create_refresh_token(email: str, expires_delta: int = None):
     encoded_jwt = jwt.encode(to_encode, settings.JWT_REFRESH_SECRET_KEY, settings.JWT_ALGORITHM)
     return encoded_jwt
 
-async def authenticate_user(session: AsyncSession, username: str, password: str):
-    user_res = await session.execute(select(models.User).where(models.User.username == username))
+async def authenticate_user(session: AsyncSession, email: str, password: str):
+    user_res = await session.execute(select(models.User).where(models.User.email == email))
     user = user_res.scalar()
     if not user:
         return False

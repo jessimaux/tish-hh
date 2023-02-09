@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BASEDIR = os.path.dirname(__file__)
+BASEDIR = os.path.abspath(os.path.dirname(__file__))
 MEDIADIR = os.path.join(BASEDIR, 'media/')
 MEDIAURL = '/media/'
 

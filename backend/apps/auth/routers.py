@@ -1,6 +1,6 @@
 import datetime
 import os
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, File, UploadFile, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
@@ -28,6 +28,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token/")
 @router.post("/users/reg/", tags=['users'], response_model=UserRetrieve)
 async def create_user(user: UserCreate,
                       request: Request,
+                      background_tasks: BackgroundTasks,
                       session: AsyncSession = Depends(get_session)):
     check_email_res = await session.execute(select(User).where(User.email == user.email))
     check_email = check_email_res.scalar()
@@ -44,8 +45,7 @@ async def create_user(user: UserCreate,
     session.add(user_obj)
     await session.commit()
 
-    # TODO: rewrite to fastapi-background
-    await send_verification_code(user_obj, request, session)
+    background_tasks.add_task(send_verification_code, user_obj, request, session)
     return user_obj
 
 
@@ -107,15 +107,15 @@ async def update_user(user: UserUpdate,
 
 @router.post('/users/me/photo/', tags=['users'])
 async def update_photo(file: UploadFile,
-                       current_user: UserRetrieve = Depends(
-                           get_current_active_user),
+                       current_user: UserRetrieve = Depends(get_current_active_user),
                        session: AsyncSession = Depends(get_session)):
     old_file = current_user.image
     try:
         current_user.image = await handle_file_upload(file, 'auth/profile/', ['image/jpeg', 'image/png'])
     finally:
-        if os.path.exists(os.path.join(settings.BASEDIR, old_file)):
-            os.remove(os.path.join(settings.BASEDIR, old_file))
+        file_path = os.path.join(settings.BASEDIR, old_file[1:])
+        if os.path.exists(file_path):
+            os.remove(file_path)
     await session.commit()
     return current_user.image
 
@@ -140,6 +140,7 @@ async def change_password(password_form: UserPasswordChange,
 @router.post('/users/send_retrieve_password/', tags=['users'])
 async def send_retrieve_password(email: str,
                                  request: Request,
+                                 background_tasks: BackgroundTasks,
                                  session: AsyncSession = Depends(get_session)):
     user_res = await session.execute(select(User).where(User.email == email))
     user_obj = user_res.scalar()
@@ -148,8 +149,7 @@ async def send_retrieve_password(email: str,
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User with this email doesnt exists"
         )
-    # TODO: rewrite to fastapi-background
-    await send_retrieve_password_link(user_obj, request)
+    background_tasks.add_task(send_retrieve_password_link, user_obj, request)
     return JSONResponse({'message': 'Email to retrieve password sent'},
                         status_code=status.HTTP_200_OK)
 
