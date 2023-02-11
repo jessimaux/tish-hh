@@ -4,6 +4,7 @@ from typing import Literal
 
 
 class CategoryBase(BaseModel):
+    id: int | None
     name: str
     
     class Config:
@@ -11,6 +12,7 @@ class CategoryBase(BaseModel):
         
 
 class DateBase(BaseModel):
+    id: int | None
     date: datetime
     
     class Config:
@@ -18,6 +20,7 @@ class DateBase(BaseModel):
         
 
 class CharacteristicBase(BaseModel):
+    id: int | None
     name: str
     description: str
     
@@ -26,6 +29,7 @@ class CharacteristicBase(BaseModel):
         
 
 class LinkBase(BaseModel):
+    id: int | None
     name: str
     link: str
     
@@ -34,6 +38,7 @@ class LinkBase(BaseModel):
         
 
 class ContactBase(BaseModel):
+    id: int | None
     name: str
     description: str
     contact: str
@@ -43,6 +48,7 @@ class ContactBase(BaseModel):
         
         
 class QABase(BaseModel):
+    id: int | None
     quest: str
     answer: str
     
@@ -51,6 +57,7 @@ class QABase(BaseModel):
 
         
 class TagBase(BaseModel):
+    id: int | None
     name: str
     
     class Config:
@@ -61,8 +68,6 @@ class EventBase(BaseModel):
     name: str = Field(..., max_length=255)
     description: str
     address: str
-    
-    category_id: int
     
     repeatable: bool
     repeatable_type: Literal['day', 'week', 'month', 'year']
@@ -77,7 +82,8 @@ class EventBase(BaseModel):
         
 
 class EventCreate(EventBase):
-    tags: list[TagBase]
+    category_id: int
+    tags: list[int]
     links: list[LinkBase]
     contacts: list[ContactBase]
     characteristics: list[CharacteristicBase]
@@ -85,9 +91,15 @@ class EventCreate(EventBase):
     qas: list[QABase]
 
 
-class EventRetrieve(EventCreate):
-    id: int    
+class EventRetrieve(EventBase):
+    id: int
     category: CategoryBase
+    tags: list[TagBase]
+    links: list[LinkBase]
+    contacts: list[ContactBase]
+    characteristics: list[CharacteristicBase]
+    dates: list[DateBase]
+    qas: list[QABase]
 
 
 class SignBase(BaseModel):

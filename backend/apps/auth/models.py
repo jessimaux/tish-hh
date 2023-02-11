@@ -25,7 +25,7 @@ class User(Base):
     
     # TODO: maybe backref?
     events = relationship('Sign', back_populates='user')
-    links = relationship("Link", backref="user", lazy="joined")
+    links = relationship("Link", backref="user")
     
     is_verifed = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)

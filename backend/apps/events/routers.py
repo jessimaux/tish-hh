@@ -137,16 +137,7 @@ async def get_events(current_user: UserRetrieve = Depends(get_current_active_use
 async def get_event(id: int,
                     current_user: UserRetrieve = Depends(get_current_active_user),
                     session: AsyncSession = Depends(get_session)):
-    event_obj_res = await session.execute(select(Event)
-                                          .where(Event.id == id)
-                                          .options(selectinload(Event.dates), 
-                                                   selectinload(Event.links),
-                                                   selectinload(Event.characteristics),
-                                                   selectinload(Event.contacts),
-                                                   selectinload(Event.qas),
-                                                   selectinload(Event.tags),
-                                                   selectinload(Event.category)))
-    event_obj = event_obj_res.scalar()
+    event_obj = await crud.get_event(id, session)
     return event_obj
 
 @router.post("/events/", tags=['events'], response_model=EventRetrieve)

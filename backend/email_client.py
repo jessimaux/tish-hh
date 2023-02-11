@@ -34,7 +34,7 @@ async def send_verification_code(user: User, request: Request, session: Session)
     
     to_encode = {"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=10), "email": str(user.email)}
     encoded_jwt = jwt.encode(to_encode, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
-    url = f"{request.url.scheme}://{request.client.host}:{request.url.port}/users/verifyemail/{encoded_jwt}"
+    url = f"{request.url.scheme}://{request.client.host}:{request.url.port}/auth/verifyemail/{encoded_jwt}"
     
     html = template.render(
         username = user.username,
@@ -60,7 +60,7 @@ async def send_retrieve_password_link(user: User, request: Request):
     
     to_encode = {"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=10), "email": str(user.email)}
     encoded_jwt = jwt.encode(to_encode, settings.JWT_RETRIEVE_PASSWORD_SECRET_KEY, settings.JWT_ALGORITHM)
-    url = f"{request.url.scheme}://{request.client.host}:{request.url.port}/users/retrieve_password/{encoded_jwt}"
+    url = f"{request.url.scheme}://{request.client.host}:{request.url.port}/auth/retrieve_password/{encoded_jwt}"
     
     html = template.render(
         username = user.username,

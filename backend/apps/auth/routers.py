@@ -1,9 +1,10 @@
 import datetime
 import os
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, File, UploadFile, BackgroundTasks
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt, JWTError
 
@@ -22,34 +23,32 @@ from . import crud
 # Permission for register, refresh
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token/")
 
 
-@router.post("/users/reg/", tags=['users'], response_model=UserRetrieve)
+@router.post("/auth/reg/", tags=['auth'], response_model=UserRetrieve)
 async def create_user(user: UserCreate,
                       request: Request,
                       background_tasks: BackgroundTasks,
                       session: AsyncSession = Depends(get_session)):
-    check_email_res = await session.execute(select(User).where(User.email == user.email))
-    check_email = check_email_res.scalar()
-    if check_email:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    check_username_result = await session.execute(select(User).where(User.username == user.username))
-    check_username = check_username_result.scalar()
-    if check_username:
+    if crud.check_email:
+        raise HTTPException(
+            status_code=400, detail="Email already registered")
+    if crud.check_username:
         raise HTTPException(
             status_code=400, detail="Username already registered")
     hashed_password = get_hashed_password(user.password)
     user_obj = User(password=hashed_password,
-                    email=user.email, username=user.username)
+                    email=user.email, username=user.username,
+                    events=[], links=[])
     session.add(user_obj)
     await session.commit()
 
-    background_tasks.add_task(send_verification_code, user_obj, request, session)
+    background_tasks.add_task(send_verification_code,
+                              user_obj, request, session)
     return user_obj
 
 
-@router.post("/users/token/", tags=['users'], response_model=TokenPare)
+@router.post("/auth/token/", tags=['auth'], response_model=TokenPare)
 async def login_for_access_token(response: Response,
                                  form_data: OAuth2PasswordRequestForm = Depends(),
                                  session: AsyncSession = Depends(get_session)):
@@ -64,10 +63,10 @@ async def login_for_access_token(response: Response,
 
     response.set_cookie('access_token', access_token,
                         settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60)
-    return TokenPare(access_token, refresh_token)
+    return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.get('/users/refresh/', tags=['users'])
+@router.get('/auth/refresh/', tags=['auth'])
 async def refresh_token(token: Token,
                         request: Request,
                         response: Response,
@@ -89,22 +88,24 @@ async def refresh_token(token: Token,
     return Token(access_token)
 
 
-@router.get("/users/me/", tags=['users'], response_model=UserRetrieve)
+@router.get("/users/me/", tags=['users-me'], response_model=UserRetrieve)
 def get_user_me(current_user: UserRetrieve = Depends(get_current_active_user)):
     return current_user
 
 
-@router.post('/users/me/update/', tags=['users'], response_model=UserRetrieve)
+@router.post('/users/me/update/', tags=['users-me'], response_model=UserRetrieve)
 async def update_user(user: UserUpdate,
-                      current_user: UserRetrieve = Depends(get_current_active_user),
+                      current_user: UserRetrieve = Depends(
+                          get_current_active_user),
                       session: AsyncSession = Depends(get_session)):
     current_user = await crud.update_user(user, current_user, session)
     return current_user
 
 
-@router.post('/users/me/photo/', tags=['users'])
+@router.post('/users/me/photo/', tags=['users-me'])
 async def update_photo(file: UploadFile,
-                       current_user: UserRetrieve = Depends(get_current_active_user),
+                       current_user: UserRetrieve = Depends(
+                           get_current_active_user),
                        session: AsyncSession = Depends(get_session)):
     old_file = current_user.image
     try:
@@ -117,9 +118,10 @@ async def update_photo(file: UploadFile,
     return current_user.image
 
 
-@router.post('/users/me/change_password/', tags=['users'])
+@router.post('/users/me/change_password/', tags=['users-me'])
 async def change_password(password_form: UserPasswordChange,
-                          current_user: UserRetrieve = Depends(get_current_active_user),
+                          current_user: UserRetrieve = Depends(
+                              get_current_active_user),
                           session: AsyncSession = Depends(get_session)):
     # verificate password
     if verify_password(password_form.old_password, current_user.password):
@@ -134,7 +136,7 @@ async def change_password(password_form: UserPasswordChange,
         )
 
 
-@router.post('/users/send_retrieve_password/', tags=['users'])
+@router.post('/auth/send_retrieve_password/', tags=['auth'])
 async def send_retrieve_password(pswrd_retrieve_form: PasswordRetrieveBase,
                                  request: Request,
                                  background_tasks: BackgroundTasks,
@@ -151,9 +153,10 @@ async def send_retrieve_password(pswrd_retrieve_form: PasswordRetrieveBase,
                         status_code=status.HTTP_200_OK)
 
 
-@router.get('/users/retrieve_password/{token}/', tags=['users'])
+@router.get('/auth/retrieve_password/{token}/', tags=['auth'])
 async def retrieve_password(token: str,
                             session: AsyncSession = Depends(get_session)):
+    """ Method to get access for retrieve password page """
     try:
         jwt_decoded = jwt.decode(
             token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
@@ -176,7 +179,7 @@ async def retrieve_password(token: str,
                         status_code=status.HTTP_200_OK)
 
 
-@router.post('/users/retrieve_password/{token}/', tags=['users'])
+@router.post('/auth/retrieve_password/{token}/', tags=['auth'])
 async def retrieve_password(token: str,
                             pswrd_form: UserPasswordRetrieve,
                             session: AsyncSession = Depends(get_session)):
@@ -204,9 +207,9 @@ async def retrieve_password(token: str,
                         status_code=status.HTTP_200_OK)
 
 
-@router.get('/users/verifyemail/{token}/', tags=['users'])
-async def verify_me(token: str,
-                    session: AsyncSession = Depends(get_session)):
+@router.get('/auth/verifyemail/{token}/', tags=['auth'])
+async def verify(token: str,
+                 session: AsyncSession = Depends(get_session)):
     try:
         jwt_decoded = jwt.decode(
             token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)

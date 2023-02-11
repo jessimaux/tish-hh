@@ -1,11 +1,14 @@
 from pydantic import BaseModel, EmailStr
 
+from apps.events.schemas import EventRetrieve
+
 
 class PasswordRetrieveBase(BaseModel):
     email: EmailStr
     
 
 class LinkBase(BaseModel):
+    id: int | None
     name: str
     link: str
     
@@ -14,7 +17,7 @@ class LinkBase(BaseModel):
         
         
 class UserBase(BaseModel):
-    email: str
+    email: EmailStr
     username: str
     
     class Config:
@@ -37,9 +40,9 @@ class UserPasswordRetrieve(BaseModel):
 class UserUpdate(UserBase):
     phone: str | None
     name: str | None
-    country: str
-    region: str
-    city: str
+    country: str | None
+    region: str | None
+    city: str | None
     age: int | None
     gender: bool | None
     bio: str | None

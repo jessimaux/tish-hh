@@ -1,8 +1,22 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 
 from .models import *
 from .schemas import *
+import crud
+
+
+async def get_event(id: int, session: AsyncSession):
+    return (await session.execute(select(Event)
+                                  .where(Event.id == id)
+                                  .options(selectinload(Event.dates),
+                                           selectinload(Event.links),
+                                           selectinload(Event.characteristics),
+                                           selectinload(Event.contacts),
+                                           selectinload(Event.qas),
+                                           selectinload(Event.tags),
+                                           selectinload(Event.category)))).scalar()
 
 
 async def create_event(event: EventCreate, session: AsyncSession):
@@ -12,33 +26,30 @@ async def create_event(event: EventCreate, session: AsyncSession):
             continue
         setattr(event_obj, attr, value)
 
-    # for m2m event-tags
     for tag in event.tags:
-        tag_res = await session.execute(select(Tag).where(Tag.name == tag.name))
-        tag_db = tag_res.scalar()
-        event_obj.tags.append(tag_db)
+        tag_obj = (await session.execute(select(Tag)
+                                         .where(Tag.name == tag.name))).scalar()
+        event_obj.tags.append(tag_obj)
 
-    # for fg dates
     for date in event.dates:
         event_obj.dates.append(Date(date=date.date))
 
-    # for fg characteristics
     for characteristic in event.characteristics:
         event_obj.characteristics.append(Characteristic(name=characteristic.name,
                                                         description=characteristic.description,
                                                         event_id=event_obj.id))
-    # for fg links
+
     for link in event.links:
         event_obj.links.append(EventLink(name=link.name,
-                                    link=link.link,
-                                    event_id=event_obj.id))
-    # for fg contacts
+                                         link=link.link,
+                                         event_id=event_obj.id))
+
     for contact in event.contacts:
         event_obj.contacts.append(Contact(name=contact.name,
                                           description=contact.description,
                                           contact=contact.contact,
                                           event_id=event_obj.id))
-    # for fg QAs
+
     for qa in event.qas:
         event_obj.qas.append(QA(quest=qa.quest,
                                 answer=qa.answer,
@@ -50,60 +61,26 @@ async def create_event(event: EventCreate, session: AsyncSession):
 
 
 async def edit_event(id: int, event: EventCreate, session: AsyncSession):
-    event_res = await session.execute(select(Event).where(Event.id == id))
-    event_obj = event_res.scalar()
+    event_obj = await get_event(id, session)
     for attr, value in event:
-        if attr in ['tags', 'dates', 'characteristics', 'links', 'contacts', 'qas']:
-            continue
-        setattr(event_obj, attr, value)
+        if attr not in ['tags', 'dates', 'characteristics', 'links', 'contacts', 'qas']:
+            setattr(event_obj, attr, value)
 
-    # for m2m event-tags
-    tags = list()
-    for tag in event.tags:
-        tag_res = await session.execute(select(Tag).where(Tag.name == tag.name))
-        tag_db = tag_res.scalar()
-        tags.append(tag_db)
-    event_obj.tags = tags
+    for tag_id in event.tags:
+        if tag_id not in [tag_obj.id for tag_obj in event_obj.tags]:
+            tag_obj = (await session.execute(select(Tag)
+                                             .where(Tag.id == tag_id))).scalar()
+            event_obj.tags.append(tag_obj)
+            
+    for tag_obj in event_obj.tags:
+        if tag_obj.id not in event.tags:
+            event_obj.tags.remove(tag_obj)
+            
+    await crud.update_fg(event_obj.dates, Date, event.dates, session)
+    await crud.update_fg(event_obj.characteristics, Characteristic, event.characteristics, session)
+    await crud.update_fg(event_obj.links, EventLink, event.links, session)
+    await crud.update_fg(event_obj.contacts, Contact, event.contacts, session)
+    await crud.update_fg(event_obj.qas, QA, event.qas, session)
 
-    # for fg dates
-    dates = list()
-    for date in event.dates:
-        dates.append(Date(date=date.date))
-    event_obj.dates = dates
-
-    # for fg characteristics
-    characteristics = list()
-    for characteristic in event.characteristics:
-        characteristics.append(Characteristic(name=characteristic.name,
-                                              description=characteristic.description,
-                                              event_id=event_obj.id))
-    event_obj.characterestics = characteristics
-
-    # for fg links
-    links = list()
-    for link in event.links:
-        links.append(EventLink(name=link.name,
-                          link=link.link,
-                          event_id=event_obj.id))
-    event_obj.links = links
-
-    # for fg contacts
-    contacts = list()
-    for contact in event.contacts:
-        contacts.append(Contact(name=contact.name,
-                                description=contact.description,
-                                contact=contact.contact,
-                                event_id=event_obj.id))
-    event_obj.contacts = contacts
-
-    # for fg QAs
-    qas = list()
-    for qa in event.qas:
-        qas.append(QA(quest=qa.quest,
-                      answer=qa.answer,
-                      event_id=event_obj.id))
-    event_obj.qas = qas
-
-    session.add(event_obj)
     await session.commit()
     return event_obj
