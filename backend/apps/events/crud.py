@@ -60,8 +60,7 @@ async def create_event(event: EventCreate, session: AsyncSession):
     return event_obj
 
 
-async def edit_event(id: int, event: EventCreate, session: AsyncSession):
-    event_obj = await get_event(id, session)
+async def edit_event(event: EventCreate, event_obj: Event, session: AsyncSession):
     for attr, value in event:
         if attr not in ['tags', 'dates', 'characteristics', 'links', 'contacts', 'qas']:
             setattr(event_obj, attr, value)

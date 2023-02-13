@@ -104,7 +104,6 @@ class EventRetrieve(EventBase):
 
 class SignBase(BaseModel):
     status: str
-    user_id: int
     event_id: int
     
     class Config:
@@ -113,3 +112,4 @@ class SignBase(BaseModel):
         
 class SignRetrieve(SignBase):
     id: int
+    user_id: int

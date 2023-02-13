@@ -65,4 +65,5 @@ class TokenPare(BaseModel):
 
 class TokenData(BaseModel):
     email: str = None
+    scopes: list[str] = []
     exp: int = None

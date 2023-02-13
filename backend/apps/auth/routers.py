@@ -1,6 +1,7 @@
 import datetime
 import os
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, File, UploadFile, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, \
+    File, UploadFile, BackgroundTasks, Security
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
@@ -25,11 +26,14 @@ from . import crud
 router = APIRouter()
 
 
+""" Auth """
 @router.post("/auth/reg/", tags=['auth'], response_model=UserRetrieve)
 async def create_user(user: UserCreate,
                       request: Request,
                       background_tasks: BackgroundTasks,
                       session: AsyncSession = Depends(get_session)):
+    if request.headers.get("Authorization"):
+            raise HTTPException(status_code=403, detail="Already authenticated")
     if crud.check_email:
         raise HTTPException(
             status_code=400, detail="Email already registered")
@@ -58,7 +62,7 @@ async def login_for_access_token(response: Response,
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-    access_token = create_access_token(user.email)
+    access_token = create_access_token(user.email, scopes=form_data.scopes)
     refresh_token = create_refresh_token(user.email)
 
     response.set_cookie('access_token', access_token,
@@ -86,54 +90,6 @@ async def refresh_token(token: Token,
             status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect username or password")
     access_token = create_access_token(user_obj.email)
     return Token(access_token)
-
-
-@router.get("/users/me/", tags=['users-me'], response_model=UserRetrieve)
-def get_user_me(current_user: UserRetrieve = Depends(get_current_active_user)):
-    return current_user
-
-
-@router.post('/users/me/update/', tags=['users-me'], response_model=UserRetrieve)
-async def update_user(user: UserUpdate,
-                      current_user: UserRetrieve = Depends(
-                          get_current_active_user),
-                      session: AsyncSession = Depends(get_session)):
-    current_user = await crud.update_user(user, current_user, session)
-    return current_user
-
-
-@router.post('/users/me/photo/', tags=['users-me'])
-async def update_photo(file: UploadFile,
-                       current_user: UserRetrieve = Depends(
-                           get_current_active_user),
-                       session: AsyncSession = Depends(get_session)):
-    old_file = current_user.image
-    try:
-        current_user.image = await handle_file_upload(file, 'auth/profile/', ['image/jpeg', 'image/png'])
-    finally:
-        file_path = os.path.join(settings.BASEDIR, old_file[1:])
-        if os.path.exists(file_path):
-            os.remove(file_path)
-    await session.commit()
-    return current_user.image
-
-
-@router.post('/users/me/change_password/', tags=['users-me'])
-async def change_password(password_form: UserPasswordChange,
-                          current_user: UserRetrieve = Depends(
-                              get_current_active_user),
-                          session: AsyncSession = Depends(get_session)):
-    # verificate password
-    if verify_password(password_form.old_password, current_user.password):
-        # change password with hash, upd user
-        current_user.password = get_hashed_password(password_form.new_password)
-        await session.commit()
-        return JSONResponse({"message": "Password changed successfully"}, status_code=status.HTTP_202_ACCEPTED)
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Incorrect old password"
-        )
 
 
 @router.post('/auth/send_retrieve_password/', tags=['auth'])
@@ -235,3 +191,54 @@ async def verify(token: str,
     await session.commit()
     return JSONResponse({"message": "Account verified successfully"},
                         status_code=status.HTTP_200_OK)
+
+
+""" Users """
+
+@router.get("/users/me/", tags=['users-me'], response_model=UserRetrieve)
+def get_user_me(current_user: UserRetrieve = Security(get_current_active_user, scopes=['me'])):
+    return current_user
+
+
+@router.post('/users/me/update/', tags=['users-me'], response_model=UserRetrieve)
+async def update_user(user: UserUpdate,
+                      current_user: UserRetrieve = Security(
+                          get_current_active_user, scopes=['me']),
+                      session: AsyncSession = Depends(get_session)):
+    current_user = await crud.update_user(user, current_user, session)
+    return current_user
+
+
+@router.post('/users/me/photo/', tags=['users-me'])
+async def update_photo(file: UploadFile,
+                       current_user: UserRetrieve = Security(
+                           get_current_active_user, scopes=['me']),
+                       session: AsyncSession = Depends(get_session)):
+    old_file = current_user.image
+    try:
+        current_user.image = await handle_file_upload(file, 'auth/profile/', ['image/jpeg', 'image/png'])
+    finally:
+        file_path = os.path.join(settings.BASEDIR, old_file[1:])
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    await session.commit()
+    return current_user.image
+
+
+@router.post('/users/me/change_password/', tags=['users-me'])
+async def change_password(password_form: UserPasswordChange,
+                          current_user: UserRetrieve = Security(
+                              get_current_active_user, scopes=['me']),
+                          session: AsyncSession = Depends(get_session)):
+    # verificate password
+    if verify_password(password_form.old_password, current_user.password):
+        # change password with hash, upd user
+        current_user.password = get_hashed_password(password_form.new_password)
+        await session.commit()
+        return JSONResponse({"message": "Password changed successfully"}, status_code=status.HTTP_202_ACCEPTED)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Incorrect old password"
+        )
+
