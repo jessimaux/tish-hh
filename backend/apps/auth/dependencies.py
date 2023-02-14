@@ -19,7 +19,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token/",
                                              "events": "Read information about events.",
                                              "sign": "Read information about signs.",
                                              "tags": "Read information about tags",
-                                             "categories": "Read information about categories"},)
+                                             "categories": "Read information about categories",
+                                             "admin": "Admin's privilleges"},)
 
 async def get_current_user(security_scopes: SecurityScopes,
                            session: AsyncSession = Depends(get_session), 
