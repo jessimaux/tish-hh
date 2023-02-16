@@ -63,7 +63,7 @@ async def edit_event(id: int,
                      event: EventCreate,
                      current_user: UserRetrieve = Security(get_current_active_user, scopes=['events']),
                      session: AsyncSession = Depends(get_session)):
-    event_obj = await get_event(id, session)
+    event_obj = await crud.get_event(id, session)
     if event_obj.created_by != current_user.id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Not enough permissions")

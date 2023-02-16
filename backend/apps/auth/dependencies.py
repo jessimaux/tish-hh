@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status, Security
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, lazyload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies import get_session
@@ -17,7 +17,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token/",
                                      scopes={"me": "Read information about the current user.",
                                              "users": "Read information about users.", 
                                              "events": "Read information about events.",
-                                             "sign": "Read information about signs.",
+                                             "signs": "Read information about signs.",
                                              "tags": "Read information about tags",
                                              "categories": "Read information about categories",
                                              "admin": "Admin's privilleges"},)
@@ -45,8 +45,7 @@ async def get_current_user(security_scopes: SecurityScopes,
             headers={"WWW-Authenticate": "Bearer"},
         )
     user_res = await session.execute(select(User)
-                                     .where(User.email == token_data.email)
-                                     .options(selectinload(User.links)))
+                                     .where(User.email == token_data.email))
     user = user_res.scalar()
     if user is None:
         raise HTTPException(

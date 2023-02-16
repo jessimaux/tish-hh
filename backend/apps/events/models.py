@@ -23,7 +23,8 @@ class Event(Base):
     is_template = Column(Boolean)
     is_announcement = Column(Boolean)
 
-    users = relationship('Sign', back_populates='event')
+    users = relationship('Sign', back_populates='event', lazy='dynamic')
+    
     tags = relationship('Tag', secondary="events__tags", back_populates="events")
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

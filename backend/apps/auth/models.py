@@ -23,16 +23,27 @@ class User(Base):
     bio = Column(String(255))
     image = Column(String, nullable=True)
     
-    # TODO: maybe backref?
-    events = relationship('Sign', back_populates='user')
-    links = relationship("Link", backref="user")
+    events = relationship('Sign', back_populates='user', lazy='dynamic')
+    
+    links = relationship("Link", backref="user", lazy="selectin")
+    
+    following = relationship('User',
+                             secondary="users__subscriptions",
+                             primaryjoin="User.id==Subscription.subscriber_id", 
+                             secondaryjoin="User.id==Subscription.publisher_id",
+                             lazy="dynamic")
+    followers = relationship('User',
+                             secondary="users__subscriptions",
+                             primaryjoin="User.id==Subscription.publisher_id", 
+                             secondaryjoin="User.id==Subscription.subscriber_id",
+                             lazy="dynamic")
     
     is_verifed = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     
 class Link(Base):
     __tablename__ = "users__links"
@@ -41,3 +52,10 @@ class Link(Base):
     name = Column(String(255))
     link = Column(String)
     user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
+
+
+class Subscription(Base):
+    __tablename__ = "users__subscriptions"
+    
+    subscriber_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'), primary_key=True)
+    publisher_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'), primary_key=True)
