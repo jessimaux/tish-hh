@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dependencies import get_session
 from apps.events.models import *
 from apps.events.schemas import *
-from apps.auth.schemas import *
+from apps.users.schemas import *
 from apps.auth.dependencies import get_current_active_user
 
 

@@ -1,17 +1,17 @@
 import datetime
-from functools import wraps
 
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status, Security
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload, lazyload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies import get_session
+from apps.users.models import User
+from apps.users.schemas import UserRetrieve
 from .schemas import *
-from .models import *
 import settings
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token/",
                                      scopes={"me": "Read information about the current user.",
@@ -21,6 +21,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token/",
                                              "tags": "Read information about tags",
                                              "categories": "Read information about categories",
                                              "admin": "Admin's privilleges"},)
+
 
 async def get_current_user(security_scopes: SecurityScopes,
                            session: AsyncSession = Depends(get_session), 

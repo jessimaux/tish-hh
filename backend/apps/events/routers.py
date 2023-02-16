@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from dependencies import get_session
 from apps.auth.dependencies import get_current_active_user
-from apps.auth.schemas import UserRetrieve
+from apps.users.schemas import UserRetrieve
 from .models import *
 from .schemas import *
 from . import crud

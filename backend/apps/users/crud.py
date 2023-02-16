@@ -24,12 +24,10 @@ async def check_email(email: EmailStr, session: AsyncSession):
         return False
 
 
-async def check_follow(username: str, current_user: User, session: AsyncSession):
-    user_target = (await session.execute(select(User)
-                                         .where(User.username == username))).scalar()
+async def check_follow(target_user: User, current_user: User, session: AsyncSession):
     check = (await session.execute(select(Subscription)
                                    .where(Subscription.subscriber_id == current_user.id,
-                                          Subscription.publisher_id == user_target.id))).scalar()
+                                          Subscription.publisher_id == target_user.id))).scalar()
     if check:
         return True
     else:

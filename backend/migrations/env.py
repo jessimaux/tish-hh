@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from apps.auth import models
+from apps.users import models
 from apps.events import models
 target_metadata = database.Base.metadata
 

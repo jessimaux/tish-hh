@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from jinja2 import Environment, select_autoescape, PackageLoader
 from jose import jwt
 
-from apps.auth.models import User
+from apps.users.models import User
 import settings
 
 
