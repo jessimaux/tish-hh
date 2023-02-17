@@ -42,12 +42,12 @@ async def login_for_access_token(response: Response,
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.get('/auth/refresh/', tags=['auth'])
+@router.post('/auth/refresh/', tags=['auth'], response_model=Token)
 async def refresh_token(token: Token,
                         session: AsyncSession = Depends(get_session)):
     try:
         payload = jwt.decode(
-            token, settings.JWT_REFRESH_SECRET_KEY, settings.JWT_ALGORITHM)
+            token.token, settings.JWT_REFRESH_SECRET_KEY, settings.JWT_ALGORITHM)
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -58,6 +58,6 @@ async def refresh_token(token: Token,
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect username or password")
     access_token = create_access_token(user_obj.email)
-    return Token(access_token)
+    return Token(token=access_token)
 
 

@@ -23,8 +23,7 @@ class User(Base):
     bio = Column(String(255))
     image = Column(String, nullable=True)
     
-    events = relationship('Sign', back_populates='user', lazy='dynamic')
-    
+    signs = relationship('Sign', back_populates='user', lazy='dynamic')
     links = relationship("Link", backref="user", lazy="selectin")
     
     following = relationship('User',

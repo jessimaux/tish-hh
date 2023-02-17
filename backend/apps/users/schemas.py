@@ -45,7 +45,7 @@ class UserRetrieve(UserUpdate):
     
     
 class PasswordRetrieveBase(BaseModel):
-    email: EmailStr
+    login: str
     
 
 class UserPasswordRetrieve(BaseModel):

@@ -27,7 +27,7 @@ def create_access_token(email: str, scopes: list[str] = [], expires_delta: int =
         expires_delta = datetime.utcnow(
         ) + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode = {"exp": expires_delta, "email": str(email), "scopes": scopes}
+    to_encode = {"exp": expires_delta, "email": email, "scopes": scopes}
     encoded_jwt = jwt.encode(
         to_encode, settings.JWT_SECRET_KEY, settings.JWT_ALGORITHM)
     return encoded_jwt

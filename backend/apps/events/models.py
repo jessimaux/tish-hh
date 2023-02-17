@@ -23,7 +23,7 @@ class Event(Base):
     is_template = Column(Boolean)
     is_announcement = Column(Boolean)
 
-    users = relationship('Sign', back_populates='event', lazy='dynamic')
+    signs = relationship('Sign', back_populates='event', lazy='dynamic')
     
     tags = relationship('Tag', secondary="events__tags", back_populates="events")
     
@@ -82,17 +82,7 @@ class QA(Base):
     event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
 
     event = relationship("Event", backref="qas")
-    
-class Sign(Base):
-    __tablename__ = "events__signs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
-    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
-    status = Column(String(255))
-    
-    user = relationship("User", back_populates="events")
-    event = relationship("Event", back_populates="users")
     
 class Category(Base):
     __tablename__ = "categories"
@@ -117,3 +107,14 @@ class TagEvent(Base):
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     tag_id = Column(Integer, ForeignKey("tags.id", ondelete='CASCADE'))
+    
+    
+class Sign(Base):
+    __tablename__ = "events__signs"
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'), primary_key=True)
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'), primary_key=True)
+    status = Column(String(255))
+    
+    user = relationship("User", back_populates="signs")
+    event = relationship("Event", back_populates="signs")

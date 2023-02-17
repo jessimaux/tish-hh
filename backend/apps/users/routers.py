@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from jose import JWTError, jwt
 
 import settings
@@ -14,6 +15,7 @@ from email_client import send_verification_code, send_retrieve_password_link
 from utils import handle_file_upload
 from apps.auth.utils import get_hashed_password, verify_password
 from apps.auth.dependencies import get_current_active_user
+from apps.events.models import Event, Sign
 from .models import *
 from .schemas import *
 from . import crud
@@ -22,17 +24,17 @@ from . import crud
 router = APIRouter()
 
 
-@router.post("/users/reg/", tags=['users'], response_model=UserRetrieve)
+@router.post("/users/registration/", tags=['users-custom'], response_model=UserRetrieve)
 async def create_user(user: UserCreate,
                       request: Request,
                       background_tasks: BackgroundTasks,
                       session: AsyncSession = Depends(get_session)):
     if request.headers.get("Authorization"):
         raise HTTPException(status_code=403, detail="Already authenticated")
-    if crud.check_email:
+    if await crud.check_email(user.email, session):
         raise HTTPException(
             status_code=400, detail="Email already registered")
-    if crud.check_username:
+    if await crud.check_username(user.username, session):
         raise HTTPException(
             status_code=400, detail="Username already registered")
     hashed_password = get_hashed_password(user.password)
@@ -47,23 +49,25 @@ async def create_user(user: UserCreate,
     return user_obj
 
 
-@router.post('/users/send_retrieve_password/', tags=['users'])
-async def send_retrieve_password(pswrd_retrieve_form: PasswordRetrieveBase,
+@router.post('/users/send_retrieve_password/', tags=['users-custom'])
+async def send_retrieve_password(password_retrieve_form: PasswordRetrieveBase,
                                  request: Request,
                                  background_tasks: BackgroundTasks,
                                  session: AsyncSession = Depends(get_session)):
-    user_obj = (await session.execute(select(User).where(User.email == pswrd_retrieve_form.email))).scalar()
+    user_obj = (await session.execute(select(User).where(User.email == password_retrieve_form.login))).scalar()
     if not user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User with this email doesnt exists"
-        )
+        user_obj = (await session.execute(select(User).where(User.username == password_retrieve_form.login))).scalar()
+        if not user_obj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User with this credentials doesnt exists"
+            )
     background_tasks.add_task(send_retrieve_password_link, user_obj, request)
     return JSONResponse({'message': 'Email to retrieve password sent'},
                         status_code=status.HTTP_200_OK)
 
 
-@router.get('/users/retrieve_password/{token}/', tags=['users'])
+@router.get('/users/retrieve_password/{token}/', tags=['users-custom'])
 async def retrieve_password(token: str,
                             session: AsyncSession = Depends(get_session)):
     """ Method to get access for retrieve password page """
@@ -89,7 +93,7 @@ async def retrieve_password(token: str,
                         status_code=status.HTTP_200_OK)
 
 
-@router.post('/users/retrieve_password/{token}/', tags=['users'])
+@router.post('/users/retrieve_password/{token}/', tags=['users-custom'])
 async def retrieve_password(token: str,
                             pswrd_form: UserPasswordRetrieve,
                             session: AsyncSession = Depends(get_session)):
@@ -116,7 +120,7 @@ async def retrieve_password(token: str,
                         status_code=status.HTTP_200_OK)
 
 
-@router.get('/users/verifyemail/{token}/', tags=['users'])
+@router.get('/users/verifyemail/{token}/', tags=['users-custom'])
 async def verify(token: str,
                  session: AsyncSession = Depends(get_session)):
     try:
@@ -196,13 +200,7 @@ async def get_user(username: str,
                    current_user: UserRetrieve = Security(
                        get_current_active_user, scopes=['me']),
                    session: AsyncSession = Depends(get_session)):
-    user_obj = (await session.execute(select(User)
-                                      .where(User.username == username))).scalar()
-    if not user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='User with this username doesnt exist'
-        )
+    user_obj = await crud.get_user_or_404(username=username, session=session)
     return user_obj
 
 
@@ -211,13 +209,8 @@ async def get_followers(username: str,
                         current_user: UserRetrieve = Security(
                             get_current_active_user, scopes=['me', 'users']),
                         session: AsyncSession = Depends(get_session)):
-    user_obj = (await session.execute(select(User)
-                                      .where(User.username == username))).scalar()
-    if user_obj:
-        return (await session.scalars(user_obj.followers.statement)).all()
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='User doesnt exist')
+    user_obj = await crud.get_user_or_404(username=username, session=session)
+    return (await session.scalars(user_obj.followers.statement)).all()
 
 
 @router.get('/users/{username}/following/', tags=['users'], response_model=list[UserRetrieve])
@@ -225,27 +218,20 @@ async def get_following(username: str,
                         current_user: UserRetrieve = Security(
                             get_current_active_user, scopes=['me', 'users']),
                         session: AsyncSession = Depends(get_session)):
-    user_obj = (await session.execute(select(User)
-                                      .where(User.username == username))).scalar()
-    if user_obj:
-        return (await session.scalars(current_user.following.statement)).all()
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='User doesnt exist')
+    user_obj = await crud.get_user_or_404(username=username, session=session)
+    return (await session.scalars(user_obj.following.statement)).all()
 
 
-# TODO: check for user exists
 @router.get('/users/{username}/is_follow/', tags=['users'])
 async def is_following(username: str,
                        current_user: UserRetrieve = Security(
                            get_current_active_user, scopes=['me', 'users']),
                        session: AsyncSession = Depends(get_session)):
-    target_user = (await session.execute(select(User)
-                                         .where(User.username == username))).scalar()
-    if await crud.check_follow(target_user, current_user, session):
-        return JSONResponse(status_code=status.HTTP_200_OK)
+    user = await crud.get_user_or_404(username=username, session=session)
+    if await crud.check_follow(user, current_user, session):
+        return JSONResponse({}, status_code=status.HTTP_200_OK)
     else:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND)
+        return JSONResponse({}, status_code=status.HTTP_404_NOT_FOUND)
 
 
 @router.post('/users/{username}/follow/', tags=['users'])
@@ -253,21 +239,16 @@ async def follow(username: str,
                  current_user: UserRetrieve = Security(
                      get_current_active_user, scopes=['me', 'users']),
                  session: AsyncSession = Depends(get_session)):
-    target_user = (await session.execute(select(User)
-                                         .where(User.username == username))).scalar()
-    if target_user:
-        if await crud.check_follow(target_user, current_user, session):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                                detail='Already followed')
-        else:
-            subscribe_obj = Subscription(
-                subscriber_id=current_user.id, publisher_id=target_user.id)
-            session.add(subscribe_obj)
-            await session.commit()
-            return JSONResponse(status_code=status.HTTP_201_CREATED)
+    user = await crud.get_user_or_404(username=username, session=session)
+    if await crud.check_follow(user, current_user, session):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail='Already followed')
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='User doesnt exist')
+        subscribe_obj = Subscription(
+            subscriber_id=current_user.id, publisher_id=user.id)
+        session.add(subscribe_obj)
+        await session.commit()
+        return JSONResponse({}, status_code=status.HTTP_201_CREATED)
 
 
 @router.post('/users/{username}/unfollow/', tags=['users'])
@@ -275,44 +256,30 @@ async def unfollow(username: str,
                    current_user: UserRetrieve = Security(
                        get_current_active_user, scopes=['me', 'users']),
                    session: AsyncSession = Depends(get_session)):
-    user_target = (await session.execute(select(User)
-                                         .where(User.username == username))).scalar()
-    if user_target:
-        subscribe_obj = (await session.execute(select(Subscription)
-                                               .where(Subscription.subscriber_id == current_user.id,
-                                                      Subscription.publisher_id == user_target.id))).scalar()
-        if subscribe_obj:
-            await session.delete(subscribe_obj)
-            await session.commit()
-            return JSONResponse({"message": "Unfollow successfully"}, status_code=status.HTTP_202_ACCEPTED)
-        else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                                detail='Doesnt followed')
+    user = await crud.get_user_or_404(username=username, session=session)
+    subscribe_obj = (await session.execute(select(Subscription)
+                                           .where(Subscription.subscriber_id == current_user.id,
+                                                  Subscription.publisher_id == user.id))).scalar()
+    if subscribe_obj:
+        await session.delete(subscribe_obj)
+        await session.commit()
+        return JSONResponse({"message": "Unfollow successfully"}, status_code=status.HTTP_202_ACCEPTED)
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='User doesnt exist')
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail='Doesnt followed')
 
 
-# TODO: join event on sign
-# Get events of users which he is creator
 @router.get('/users/{username}/events/', tags=['users'])
-async def get_user_events_creator(username: str,
-                                  current_user: UserRetrieve = Security(
-                                      get_current_active_user, scopes=['events', 'users']),
-                                  session: AsyncSession = Depends(get_session)):
-    user_target = (await session.execute(select(User)
-                                         .where(User.username == username))).scalar()
-    if user_target:
-        return (await session.scalars(user_target.events.statement)).all()
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='User doesnt exist')
-
-
-# Get events of users which he is membership
-@router.get('/users/{username}/events/', tags=['users'])
-async def get_user_events_member(username: str,
-                                 current_user: UserRetrieve = Security(
-                                     get_current_active_user, scopes=['events', 'users']),
-                                 session: AsyncSession = Depends(get_session)):
-    pass
+async def get_user_events(role: str,
+                          username: str,
+                          current_user: UserRetrieve = Security(
+                              get_current_active_user, scopes=['events', 'users']),
+                          session: AsyncSession = Depends(get_session)):
+    user = await crud.get_user_or_404(username=username, session=session)
+    if role == 'member':
+        return (await session.scalars(user.signs.statement
+                                      .options(selectinload(Sign.event)))).all()
+    elif role == 'creator':
+        return (await session.scalars(user.signs.statement
+                                      .options(selectinload(Sign.event))
+                                      .where(Event.created_by == user.id))).all()

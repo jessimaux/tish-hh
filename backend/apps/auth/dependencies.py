@@ -15,7 +15,7 @@ import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token/",
                                      scopes={"me": "Read information about the current user.",
-                                             "users": "Read information about users.", 
+                                             "users": "Read information about users.",
                                              "events": "Read information about events.",
                                              "signs": "Read information about signs.",
                                              "tags": "Read information about tags",
@@ -24,18 +24,19 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token/",
 
 
 async def get_current_user(security_scopes: SecurityScopes,
-                           session: AsyncSession = Depends(get_session), 
+                           session: AsyncSession = Depends(get_session),
                            token: str = Depends(oauth2_scheme)):
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:
         authenticate_value = "Bearer"
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY,
+                             algorithms=[settings.JWT_ALGORITHM])
         token_data = TokenData(**payload)
         if datetime.datetime.fromtimestamp(token_data.exp) < datetime.datetime.now():
             raise HTTPException(
-                status_code = status.HTTP_401_UNAUTHORIZED,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token expired",
                 headers={"WWW-Authenticate": "Bearer"},
             )
@@ -45,9 +46,8 @@ async def get_current_user(security_scopes: SecurityScopes,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user_res = await session.execute(select(User)
-                                     .where(User.email == token_data.email))
-    user = user_res.scalar()
+    user = (await session.execute(select(User)
+                                  .where(User.email == token_data.email))).scalar()
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
