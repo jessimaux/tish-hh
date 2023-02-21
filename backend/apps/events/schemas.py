@@ -69,9 +69,6 @@ class EventBase(BaseModel):
     description: str
     address: str
     
-    repeatable: bool
-    repeatable_type: Literal['day', 'week', 'month', 'year']
-    
     is_private: bool
     is_closed: bool
     is_template: bool

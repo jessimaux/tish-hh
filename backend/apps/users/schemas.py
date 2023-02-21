@@ -44,9 +44,9 @@ class UserRetrieve(UserUpdate):
     image: str | None
     
     
-class PasswordRetrieveBase(BaseModel):
-    login: str
+class SubscriptionBase(BaseModel):
+    publisher_id: int
+    subscriber_id: int
     
-
-class UserPasswordRetrieve(BaseModel):
-    new_password: str
+    class Config:
+        orm_mode = True

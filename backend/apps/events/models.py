@@ -15,9 +15,6 @@ class Event(Base):
     
     category_id = Column(Integer, ForeignKey("categories.id", ondelete='CASCADE'))
     
-    repeatable = Column(Boolean)
-    repeatable_type = Column(String(255))
-    
     is_private = Column(Boolean)
     is_closed = Column(Boolean)
     is_template = Column(Boolean)
@@ -118,3 +115,7 @@ class Sign(Base):
     
     user = relationship("User", back_populates="signs")
     event = relationship("Event", back_populates="signs")
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    

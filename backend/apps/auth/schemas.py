@@ -15,3 +15,10 @@ class TokenData(BaseModel):
     scopes: list[str] = []
     exp: int = None
     
+    
+class PasswordRetrieveBase(BaseModel):
+    login: str
+    
+
+class UserPasswordRetrieve(BaseModel):
+    new_password: str

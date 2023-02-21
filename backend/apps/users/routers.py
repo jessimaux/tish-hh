@@ -1,17 +1,14 @@
 import os
 import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, \
-    File, UploadFile, BackgroundTasks, Security
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, Security
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from jose import JWTError, jwt
 
 import settings
 from dependencies import get_session
-from email_client import send_verification_code, send_retrieve_password_link
 from utils import handle_file_upload
 from apps.auth.utils import get_hashed_password, verify_password
 from apps.auth.dependencies import get_current_active_user
@@ -24,137 +21,12 @@ from . import crud
 router = APIRouter()
 
 
-@router.post("/users/registration/", tags=['users-custom'], response_model=UserRetrieve)
-async def create_user(user: UserCreate,
-                      request: Request,
-                      background_tasks: BackgroundTasks,
-                      session: AsyncSession = Depends(get_session)):
-    if request.headers.get("Authorization"):
-        raise HTTPException(status_code=403, detail="Already authenticated")
-    if await crud.check_email(user.email, session):
-        raise HTTPException(
-            status_code=400, detail="Email already registered")
-    if await crud.check_username(user.username, session):
-        raise HTTPException(
-            status_code=400, detail="Username already registered")
-    hashed_password = get_hashed_password(user.password)
-    user_obj = User(password=hashed_password,
-                    email=user.email, username=user.username,
-                    events=[], links=[])
-    session.add(user_obj)
-    await session.commit()
-
-    background_tasks.add_task(send_verification_code,
-                              user_obj, request, session)
-    return user_obj
-
-
-@router.post('/users/send_retrieve_password/', tags=['users-custom'])
-async def send_retrieve_password(password_retrieve_form: PasswordRetrieveBase,
-                                 request: Request,
-                                 background_tasks: BackgroundTasks,
-                                 session: AsyncSession = Depends(get_session)):
-    user_obj = (await session.execute(select(User).where(User.email == password_retrieve_form.login))).scalar()
-    if not user_obj:
-        user_obj = (await session.execute(select(User).where(User.username == password_retrieve_form.login))).scalar()
-        if not user_obj:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User with this credentials doesnt exists"
-            )
-    background_tasks.add_task(send_retrieve_password_link, user_obj, request)
-    return JSONResponse({'message': 'Email to retrieve password sent'},
-                        status_code=status.HTTP_200_OK)
-
-
-@router.get('/users/retrieve_password/{token}/', tags=['users-custom'])
-async def retrieve_password(token: str,
-                            session: AsyncSession = Depends(get_session)):
-    """ Method to get access for retrieve password page """
-
-    try:
-        jwt_decoded = jwt.decode(
-            token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
-        if datetime.datetime.fromtimestamp(jwt_decoded['exp']) < datetime.datetime.now():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Token expired"
-            )
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not validate token"
-        )
-    user_obj = (await session.execute(select(User).where(User.email == jwt_decoded['email']))).scalar()
-    if not user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid code or user doesn't exist")
-    return JSONResponse({"message": "Verifed to change password"},
-                        status_code=status.HTTP_200_OK)
-
-
-@router.post('/users/retrieve_password/{token}/', tags=['users-custom'])
-async def retrieve_password(token: str,
-                            pswrd_form: UserPasswordRetrieve,
-                            session: AsyncSession = Depends(get_session)):
-    try:
-        jwt_decoded = jwt.decode(
-            token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
-        if datetime.datetime.fromtimestamp(jwt_decoded['exp']) < datetime.datetime.now():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Token expired"
-            )
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not validate token"
-        )
-    user_obj = (await session.execute(select(User).where(User.email == jwt_decoded['email']))).scalar()
-    if not user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid code or user doesn't exist")
-    user_obj.password = get_hashed_password(pswrd_form.password)
-    await session.commit()
-    return JSONResponse({"message": "Password changed successfully"},
-                        status_code=status.HTTP_200_OK)
-
-
-@router.get('/users/verifyemail/{token}/', tags=['users-custom'])
-async def verify(token: str,
-                 session: AsyncSession = Depends(get_session)):
-    try:
-        jwt_decoded = jwt.decode(
-            token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
-        if datetime.datetime.fromtimestamp(jwt_decoded['exp']) < datetime.datetime.now():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Token expired"
-            )
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not validate token"
-        )
-    user_obj = (await session.execute(select(User).where(User.email == jwt_decoded['email']))).scalar()
-    if not user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid code or user doesn't exist")
-    if user_obj.is_verifed:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail='Email can only be verified once')
-    user_obj.is_verifed = True
-    await session.commit()
-    return JSONResponse({"message": "Account verified successfully"},
-                        status_code=status.HTTP_200_OK)
-
-
-@router.get("/users/me/", tags=['users-me'], response_model=UserRetrieve)
+@router.get("/users/me/", tags=['me'], response_model=UserRetrieve)
 def get_user_me(current_user: UserRetrieve = Security(get_current_active_user, scopes=['me'])):
     return current_user
 
 
-@router.post('/users/me/', tags=['users-me'], response_model=UserRetrieve)
+@router.post('/users/me/', tags=['me'], response_model=UserRetrieve)
 async def update_user(user: UserUpdate,
                       current_user: UserRetrieve = Security(
                           get_current_active_user, scopes=['me']),
@@ -163,7 +35,7 @@ async def update_user(user: UserUpdate,
     return current_user
 
 
-@router.post('/users/me/photo/', tags=['users-me'])
+@router.post('/users/me/photo/', tags=['me'])
 async def update_photo(file: UploadFile,
                        current_user: UserRetrieve = Security(
                            get_current_active_user, scopes=['me']),
@@ -179,7 +51,7 @@ async def update_photo(file: UploadFile,
     return current_user.image
 
 
-@router.post('/users/me/change_password/', tags=['users-me'])
+@router.post('/users/me/change_password/', tags=['me'])
 async def change_password(password_form: UserPasswordChange,
                           current_user: UserRetrieve = Security(
                               get_current_active_user, scopes=['me']),
