@@ -1,3 +1,4 @@
+from fastapi import status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
@@ -5,6 +6,16 @@ from sqlalchemy import select
 from .models import *
 from .schemas import *
 import crud
+
+
+async def get_category_or_404(session: AsyncSession, category_name: str | None = None):
+    if category_name:
+        category = (await session.execute(select(Category).where(Category.name == category_name))).scalar()
+    if category:
+        return category
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail='User doesnt exist')
 
 
 async def get_event(id: int, session: AsyncSession):
