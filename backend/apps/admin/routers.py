@@ -72,18 +72,19 @@ async def delete_category(name: str,
 
 """ Tags """
 
+
 @router.post("/tags/", tags=['tags'], response_model=TagBase)
 async def create_tag(tag: TagBase, 
                      current_user: UserRetrieve = Security(get_current_active_user, scopes=['tags', 'admin']),
                      session: AsyncSession = Depends(get_session)):
-    check_name_res = await session.execute(select(Tag).where(Tag.name == tag.name))
-    check_name = check_name_res.scalar()
+    check_name = (await session.execute(select(Tag).where(Tag.name == tag.name))).scalar()
     if check_name:
         raise HTTPException(status_code=400, detail="Tag already existed")
     tag_obj = Tag(name=tag.name)
     session.add(tag_obj)
     await session.commit()
     return tag_obj
+
 
 @router.put("/tags/{name}/", tags=['tags'], response_model=TagBase)
 async def edit_tag(name: str, 

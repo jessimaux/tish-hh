@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Security
+from fastapi import APIRouter, Depends, HTTPException, status, Security, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, delete, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,18 +59,13 @@ async def get_tags(current_user: UserRetrieve = Security(get_current_active_user
 
 
 @router.get("/events/", tags=['events'])
-async def get_events(tags: str | None = None,
+async def get_events(tags: list[str] | None = Query(default=None),
                      current_user: UserRetrieve = Security(get_current_active_user, scopes=['events']),
                      session: AsyncSession = Depends(get_session)):
-    statement = (select(Event)
-                 .join(Event.tags, isouter=True))
-    # statement = (select(Event)
-    #              .join(TagEvent, TagEvent.event_id == Event.id, isouter=True)
-    #              .join(Tag, Tag.id == TagEvent.tag_id, isouter=True ))
+    statement = (select(Event).join(Event.tags, isouter=True))
     if tags:
         filters = None
-        tags_list = tags.split(' ')
-        for tag in tags_list:
+        for tag in tags:
             if filters is not None:
                 filters |= Tag.name.ilike(tag)
             else:
