@@ -13,6 +13,10 @@ from .utils import *
 
 router = APIRouter()
 
+# TODO: improvements:
+# - Separate element by list, e.g. tags, users and etc.
+# - For every item add attribute position for order
+# - HOW TO SET POSITION?
 
 @router.get("/search/", tags=['search'])
 async def search(query: str,

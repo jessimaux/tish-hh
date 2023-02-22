@@ -83,7 +83,8 @@ async def get_event(id: int,
     event_obj = await crud.get_event(id, session)
     return event_obj
 
-
+# TODO: create tags if doesnt exists
+# TODO: check if already tag includes
 @router.post("/events/", tags=['events'], response_model=EventRetrieve)
 async def create_event(event: EventCreate,
                        current_user: UserRetrieve = Security(

@@ -10,18 +10,20 @@ class Event(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255))
-    description = Column(String)
-    address = Column(String)
-    
+    description = Column(String, nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete='CASCADE'))
+    category = relationship("Category", backref="events")
+    
+    date = Column(DateTime(timezone=True))
+    
+    country = Column(String(255), nullable=True)
+    region = Column(String(255), nullable=True)
+    city = Column(String(255), nullable=True)
     
     is_private = Column(Boolean)
     is_closed = Column(Boolean)
-    is_template = Column(Boolean)
-    is_announcement = Column(Boolean)
-
-    signs = relationship('Sign', back_populates='event', lazy='dynamic')
     
+    signs = relationship('Sign', back_populates='event', lazy='dynamic')
     tags = relationship('Tag', secondary="events__tags", back_populates="events")
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -29,15 +31,6 @@ class Event(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey("users.id"))
     
-    
-class Date(Base):
-    __tablename__ = "events__date"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    date = Column(DateTime(timezone=True))
-    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
-    
-    event = relationship("Event", backref="dates")
     
 class Characteristic(Base):
     __tablename__ = "events__characteristics"
@@ -87,7 +80,6 @@ class Category(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True)
     
-    events = relationship("Event", backref="category")
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -101,9 +93,8 @@ class Tag(Base):
 class TagEvent(Base):
     __tablename__ = "events__tags"
     
-    id = Column(Integer, primary_key=True, index=True)
-    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
-    tag_id = Column(Integer, ForeignKey("tags.id", ondelete='CASCADE'))
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.id", ondelete='CASCADE'), primary_key=True)
     
     
 class Sign(Base):

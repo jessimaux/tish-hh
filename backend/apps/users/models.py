@@ -15,12 +15,13 @@ class User(Base):
     password = Column(String(255))
     
     name = Column(String(255), nullable=True)
-    country = Column(String(255))
-    region = Column(String(255))
-    city = Column(String(255))
+    bio = Column(String(255), nullable=True)
     age = Column(Integer, nullable=True)
     gender = Column(Boolean, nullable=True)
-    bio = Column(String(255))
+    country = Column(String(255), nullable=True)
+    region = Column(String(255), nullable=True)
+    city = Column(String(255), nullable=True)
+    
     image = Column(String, nullable=True)
     
     signs = relationship('Sign', back_populates='user', lazy='dynamic')
