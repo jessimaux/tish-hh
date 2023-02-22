@@ -21,8 +21,7 @@ async def get_category_or_404(session: AsyncSession, category_name: str | None =
 async def get_event(id: int, session: AsyncSession):
     return (await session.execute(select(Event)
                                   .where(Event.id == id)
-                                  .options(selectinload(Event.dates),
-                                           selectinload(Event.links),
+                                  .options(selectinload(Event.links),
                                            selectinload(Event.characteristics),
                                            selectinload(Event.contacts),
                                            selectinload(Event.qas),
@@ -33,18 +32,23 @@ async def get_event(id: int, session: AsyncSession):
 async def create_event(event: EventCreate, session: AsyncSession):
     event_obj = Event()
     for attr, value in event:
-        if attr in ['tags', 'dates', 'characteristics', 'links', 'contacts', 'qas']:
+        if attr in ['tags', 'characteristics', 'links', 'contacts', 'qas']:
             continue
         setattr(event_obj, attr, value)
 
     for tag in event.tags:
-        tag_obj = (await session.execute(select(Tag)
-                                         .where(Tag.name == tag.name))).scalar()
-        event_obj.tags.append(tag_obj)
-
-    for date in event.dates:
-        event_obj.dates.append(Date(date=date.date))
-
+        # check if tag already in
+        if tag.name in [t.name for t in event_obj.tags]:
+            continue
+        # check if tag exist, add or create it
+        else:
+            tag_obj = (await session.execute(select(Tag)
+                                            .where(Tag.name == tag.name))).scalar()
+            if not tag_obj:
+                tag_obj = Tag(name=tag.name)
+                session.add(tag_obj)
+            event_obj.tags.append(tag_obj)
+            
     for characteristic in event.characteristics:
         event_obj.characteristics.append(Characteristic(name=characteristic.name,
                                                         description=characteristic.description,
@@ -76,17 +80,21 @@ async def edit_event(event: EventCreate, event_obj: Event, session: AsyncSession
         if attr not in ['tags', 'dates', 'characteristics', 'links', 'contacts', 'qas']:
             setattr(event_obj, attr, value)
 
-    for tag_id in event.tags:
-        if tag_id not in [tag_obj.id for tag_obj in event_obj.tags]:
+    # add tags for event
+    for tag in event.tags:
+        if tag.name not in [tag_obj.name for tag_obj in event_obj.tags]:
             tag_obj = (await session.execute(select(Tag)
-                                             .where(Tag.id == tag_id))).scalar()
+                                             .where(Tag.name == tag.name))).scalar()
+            if not tag_obj:
+                tag_obj = Tag(name=tag.name)
+                session.add(tag_obj)
             event_obj.tags.append(tag_obj)
             
+    # delete tags of event if it doesnt in request        
     for tag_obj in event_obj.tags:
-        if tag_obj.id not in event.tags:
+        if tag_obj.name not in [tag.name for tag in event.tags]:
             event_obj.tags.remove(tag_obj)
             
-    await crud.update_fg(event_obj.dates, Date, event.dates, session)
     await crud.update_fg(event_obj.characteristics, Characteristic, event.characteristics, session)
     await crud.update_fg(event_obj.links, EventLink, event.links, session)
     await crud.update_fg(event_obj.contacts, Contact, event.contacts, session)

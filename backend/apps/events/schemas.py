@@ -11,14 +11,6 @@ class CategoryBase(BaseModel):
         orm_mode = True
         
 
-class DateBase(BaseModel):
-    id: int | None
-    date: datetime
-    
-    class Config:
-        orm_mode = True
-        
-
 class CharacteristicBase(BaseModel):
     id: int | None
     name: str
@@ -67,12 +59,13 @@ class TagBase(BaseModel):
 class EventBase(BaseModel):
     name: str = Field(..., max_length=255)
     description: str
-    address: str
+    
+    country: str | None
+    region: str | None
+    city: str | None
     
     is_private: bool
     is_closed: bool
-    is_template: bool
-    is_announcement: bool
     
     class Config:
         orm_mode = True
@@ -80,11 +73,10 @@ class EventBase(BaseModel):
 
 class EventCreate(EventBase):
     category_id: int
-    tags: list[int]
+    tags: list[TagBase]
     links: list[LinkBase]
     contacts: list[ContactBase]
     characteristics: list[CharacteristicBase]
-    dates: list[DateBase]
     qas: list[QABase]
 
 
@@ -95,7 +87,6 @@ class EventRetrieve(EventBase):
     links: list[LinkBase]
     contacts: list[ContactBase]
     characteristics: list[CharacteristicBase]
-    dates: list[DateBase]
     qas: list[QABase]
 
 

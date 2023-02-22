@@ -14,8 +14,9 @@ async def update_fg(fg_objects: list, model: Base, data: list, session: AsyncSes
         data: Income data from request.
         session: Session for db access.
     """
-    
+    # take element from request
     for element in data:
+        # if it have id - update it, else - create
         if element.id:
             for fg_obj in fg_objects:
                 if fg_obj.id == element.id:
@@ -24,6 +25,7 @@ async def update_fg(fg_objects: list, model: Base, data: list, session: AsyncSes
         else:
             fg_objects.append(model(**element.dict()))
     
+    # delete obj if it doesnt in request
     for fg_obj in fg_objects:
         if fg_obj.id not in [element.id for element in data]:
             fg_objects.remove(fg_obj)

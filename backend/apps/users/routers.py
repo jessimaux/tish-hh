@@ -26,13 +26,13 @@ def get_user_me(current_user: UserRetrieve = Security(get_current_active_user, s
     return current_user
 
 
-@router.post('/users/me/', tags=['me'], response_model=UserRetrieve)
+@router.post('/users/me/', tags=['me'])
 async def update_user(user: UserUpdate,
                       current_user: UserRetrieve = Security(
                           get_current_active_user, scopes=['me']),
                       session: AsyncSession = Depends(get_session)):
     current_user = await crud.update_user(user, current_user, session)
-    return current_user
+    return JSONResponse({}, status_code=status.HTTP_200_OK)
 
 
 @router.post('/users/me/photo/', tags=['me'])
@@ -48,7 +48,7 @@ async def update_photo(file: UploadFile,
         if os.path.exists(file_path):
             os.remove(file_path)
     await session.commit()
-    return current_user.image
+    return JSONResponse({}, status_code=status.HTTP_200_OK)
 
 
 @router.post('/users/me/change_password/', tags=['me'])

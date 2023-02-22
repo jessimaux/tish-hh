@@ -20,8 +20,8 @@ class Event(Base):
     region = Column(String(255), nullable=True)
     city = Column(String(255), nullable=True)
     
-    is_private = Column(Boolean)
-    is_closed = Column(Boolean)
+    is_private = Column(Boolean, default=False)
+    is_closed = Column(Boolean, default=False)
     
     signs = relationship('Sign', back_populates='event', lazy='dynamic')
     tags = relationship('Tag', secondary="events__tags", back_populates="events")
@@ -79,7 +79,7 @@ class Category(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True)
-    
+
 
 class Tag(Base):
     __tablename__ = "tags"

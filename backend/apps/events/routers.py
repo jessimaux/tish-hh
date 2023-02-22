@@ -58,7 +58,7 @@ async def get_tags(current_user: UserRetrieve = Security(get_current_active_user
 """ Events """
 
 
-@router.get("/events/", tags=['events'])
+@router.get("/events/", tags=['events'], response_model=list[EventBase])
 async def get_events(tags: list[str] | None = Query(default=None),
                      current_user: UserRetrieve = Security(get_current_active_user, scopes=['events']),
                      session: AsyncSession = Depends(get_session)):
@@ -71,7 +71,7 @@ async def get_events(tags: list[str] | None = Query(default=None),
             else:
                 filters = Tag.name.ilike(tag)
         statement = statement.where(filters)
-    events = (await session.execute(statement.distinct(Event.id)))
+    events = await session.execute(statement.distinct(Event.id))
     return events.scalars().all()
 
 
@@ -83,18 +83,18 @@ async def get_event(id: int,
     event_obj = await crud.get_event(id, session)
     return event_obj
 
-# TODO: create tags if doesnt exists
+
 # TODO: check if already tag includes
-@router.post("/events/", tags=['events'], response_model=EventRetrieve)
+@router.post("/events/", tags=['events'])
 async def create_event(event: EventCreate,
                        current_user: UserRetrieve = Security(
                            get_current_active_user, scopes=['events']),
                        session: AsyncSession = Depends(get_session)):
     event_obj = await crud.create_event(event, session)
-    return event_obj
+    return JSONResponse({}, status_code=status.HTTP_201_CREATED)
 
 
-@router.put("/events/{id}/", tags=['events'], response_model=EventRetrieve)
+@router.put("/events/{id}/", tags=['events'])
 async def edit_event(id: int,
                      event: EventCreate,
                      current_user: UserRetrieve = Security(
@@ -106,7 +106,7 @@ async def edit_event(id: int,
     #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
     #                         detail="Not enough permissions")
     event_obj = await crud.edit_event(event, event_obj, session)
-    return event_obj
+    return JSONResponse({}, status_code=status.HTTP_200_OK)
 
 
 @router.delete('/events/{id}/', tags=['events'])
@@ -134,7 +134,7 @@ async def get_signs(current_user: UserRetrieve = Security(get_current_active_use
     return sign_objs
 
 
-@router.post("/signs/", tags=['signs'], response_model=SignRetrieve)
+@router.post("/signs/", tags=['signs'])
 async def create_sign(sign: SignBase,
                       current_user: UserRetrieve = Security(
                           get_current_active_user, scopes=['signs']),
@@ -143,10 +143,10 @@ async def create_sign(sign: SignBase,
                     event_id=sign.event_id, status=sign.status)
     session.add(sign_obj)
     await session.commit()
-    return sign_obj
+    return JSONResponse({}, status_code=status.HTTP_201_CREATED)
 
 
-@router.put("/signs/{id}", tags=['signs'], response_model=SignRetrieve)
+@router.put("/signs/{id}", tags=['signs'])
 async def edit_sign(id: int,
                     sign: SignBase,
                     current_user: UserRetrieve = Security(
@@ -160,7 +160,7 @@ async def edit_sign(id: int,
         setattr(sign_obj, attr, value)
     session.add(sign_obj)
     await session.commit()
-    return sign_obj
+    return JSONResponse({}, status_code=status.HTTP_200_OK)
 
 
 @router.delete('/signs/{id}', tags=['signs'])
