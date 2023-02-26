@@ -1,4 +1,6 @@
 from pydantic import BaseModel, EmailStr
+
+from core_schemas import ImageBase
     
 
 class LinkBase(BaseModel):
@@ -41,7 +43,7 @@ class UserUpdate(UserBase):
     
 class UserRetrieve(UserUpdate):
     id: int
-    image: str | None
+    image: ImageBase
     
     
 class SubscriptionBase(BaseModel):

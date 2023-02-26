@@ -23,6 +23,10 @@ class Event(Base):
     is_private = Column(Boolean, default=False)
     is_closed = Column(Boolean, default=False)
     
+    images = relationship('Image',
+                          back_populates='event',
+                          primaryjoin="and_(Event.id == foreign(Image.object_id), Image.object_type == 'Event')",
+                          lazy='selectin')
     signs = relationship('Sign', back_populates='event', lazy='dynamic')
     tags = relationship('Tag', secondary="events__tags", back_populates="events")
     
@@ -31,7 +35,7 @@ class Event(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey("users.id"))
     
-    
+        
 class Characteristic(Base):
     __tablename__ = "events__characteristics"
     

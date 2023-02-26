@@ -3,12 +3,13 @@ import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, Security
 from fastapi.responses import JSONResponse
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import settings
 from dependencies import get_session
+from models import Image
 from utils import handle_file_upload
 from apps.auth.utils import get_hashed_password, verify_password
 from apps.auth.dependencies import get_current_active_user
@@ -22,7 +23,7 @@ router = APIRouter()
 
 
 @router.get("/users/me/", tags=['me'], response_model=UserRetrieve)
-def get_user_me(current_user: UserRetrieve = Security(get_current_active_user, scopes=['me'])):
+async def get_user_me(current_user: UserRetrieve = Security(get_current_active_user, scopes=['me'])):
     return current_user
 
 
@@ -35,18 +36,24 @@ async def update_user(user: UserUpdate,
     return JSONResponse({}, status_code=status.HTTP_200_OK)
 
 
+# TODO: delete photo
 @router.post('/users/me/photo/', tags=['me'])
-async def update_photo(file: UploadFile,
+async def update_photo(image: UploadFile,
                        current_user: UserRetrieve = Security(
                            get_current_active_user, scopes=['me']),
                        session: AsyncSession = Depends(get_session)):
-    old_file = current_user.image
     try:
-        current_user.image = await handle_file_upload(file, 'auth/profile/', ['image/jpeg', 'image/png'])
+        image_url = await handle_file_upload(image, 'auth/profile/', ['image/jpeg', 'image/png'])
+        image_obj = Image(url=image_url, object_type='User',
+                          object_id=current_user.id)
     finally:
-        file_path = os.path.join(settings.BASEDIR, old_file[1:])
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        await session.execute(delete(Image).where(Image.object_id == current_user.id,
+                                                  Image.object_type == 'User'))
+        if current_user.image:
+            file_path = os.path.join(settings.BASEDIR, current_user.image.url[1:])
+            if os.path.exists(file_path):
+                os.remove(file_path)
+    session.add(image_obj)
     await session.commit()
     return JSONResponse({}, status_code=status.HTTP_200_OK)
 

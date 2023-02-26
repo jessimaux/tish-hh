@@ -53,10 +53,12 @@ async def update_user(user: UserUpdate, current_user: User, session: AsyncSessio
                             detail="Max count of user's links is 5")
     for attr, value in user:
         if attr not in ['links']:
+            # check on username exists when change username 
             if attr == 'username' and value != current_user.username:
                 if not check_username(user.username):
                     raise HTTPException(
                         status_code=400, detail="Username already in use")
+            # check on email exists when change email
             elif attr == 'email' and value != current_user.email:
                 if not check_email(user.email):
                     raise HTTPException(

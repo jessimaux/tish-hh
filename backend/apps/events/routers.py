@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Security, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Security, Query, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, delete, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+import utils
+from models import Image
 from dependencies import get_session
 from apps.auth.dependencies import get_current_active_user
 from apps.users.schemas import UserRetrieve
@@ -26,7 +28,7 @@ async def get_categories(current_user: UserRetrieve = Security(get_current_activ
     return categories_objs
 
 
-# TODO: add filter by tags
+# TODO: add list of tags filter
 @router.get("/categories/{category_name}/", tags=['categories'], response_model=list[EventBase])
 async def get_events_from_category(category_name: str,
                                    tag: str | None = None,
@@ -60,7 +62,8 @@ async def get_tags(current_user: UserRetrieve = Security(get_current_active_user
 
 @router.get("/events/", tags=['events'], response_model=list[EventBase])
 async def get_events(tags: list[str] | None = Query(default=None),
-                     current_user: UserRetrieve = Security(get_current_active_user, scopes=['events']),
+                     current_user: UserRetrieve = Security(
+                         get_current_active_user, scopes=['events']),
                      session: AsyncSession = Depends(get_session)):
     statement = (select(Event).join(Event.tags, isouter=True))
     if tags:
@@ -84,7 +87,8 @@ async def get_event(id: int,
     return event_obj
 
 
-# TODO: check if already tag includes
+# TODO: limit images 10
+# TODO: created by
 @router.post("/events/", tags=['events'])
 async def create_event(event: EventCreate,
                        current_user: UserRetrieve = Security(
@@ -94,9 +98,25 @@ async def create_event(event: EventCreate,
     return JSONResponse({}, status_code=status.HTTP_201_CREATED)
 
 
+@router.post("/events/upload/", tags=['events'])
+async def event_upload_image(images: list[UploadFile] | None = None,
+                             current_user: UserRetrieve = Security(
+                                 get_current_active_user, scopes=['events']),
+                             session: AsyncSession = Depends(get_session)):
+    images_url_list = await utils.handle_files_upload(images, 'events/', ['image/jpeg', 'image/png'])
+    images_objs_list = list()
+    for url in images_url_list:
+        images_objs_list.append(Image(url=url))
+    session.add_all(images_objs_list)
+    await session.commit()
+    return images_objs_list
+
+
+# TODO: limit images 10
 @router.put("/events/{id}/", tags=['events'])
 async def edit_event(id: int,
                      event: EventCreate,
+                     images: list[UploadFile] | None = None,
                      current_user: UserRetrieve = Security(
                          get_current_active_user, scopes=['events']),
                      session: AsyncSession = Depends(get_session)):

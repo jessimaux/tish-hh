@@ -11,6 +11,14 @@ class CategoryBase(BaseModel):
         orm_mode = True
         
 
+class ImageBase(BaseModel):
+    id: int | None
+    image: str
+    
+    class Config:
+        orm_mode = True
+        
+        
 class CharacteristicBase(BaseModel):
     id: int | None
     name: str
@@ -57,6 +65,7 @@ class TagBase(BaseModel):
         
 
 class EventBase(BaseModel):
+    id: int | None
     name: str = Field(..., max_length=255)
     description: str
     
@@ -78,16 +87,11 @@ class EventCreate(EventBase):
     contacts: list[ContactBase]
     characteristics: list[CharacteristicBase]
     qas: list[QABase]
+    images: list[int] | None
 
 
-class EventRetrieve(EventBase):
-    id: int
+class EventRetrieve(EventCreate):
     category: CategoryBase
-    tags: list[TagBase]
-    links: list[LinkBase]
-    contacts: list[ContactBase]
-    characteristics: list[CharacteristicBase]
-    qas: list[QABase]
 
 
 class SignBase(BaseModel):
