@@ -4,9 +4,9 @@ from sqlalchemy import select, delete, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-import utils
-from models import Image
 from dependencies import get_session
+from apps.core.models import Image
+from apps.core.utils import handle_file_upload
 from apps.auth.dependencies import get_current_active_user
 from apps.users.schemas import UserRetrieve
 from .models import *
@@ -96,20 +96,6 @@ async def create_event(event: EventCreate,
                        session: AsyncSession = Depends(get_session)):
     event_obj = await crud.create_event(event, session)
     return JSONResponse({}, status_code=status.HTTP_201_CREATED)
-
-
-@router.post("/events/upload/", tags=['events'])
-async def event_upload_image(images: list[UploadFile] | None = None,
-                             current_user: UserRetrieve = Security(
-                                 get_current_active_user, scopes=['events']),
-                             session: AsyncSession = Depends(get_session)):
-    images_url_list = await utils.handle_files_upload(images, 'events/', ['image/jpeg', 'image/png'])
-    images_objs_list = list()
-    for url in images_url_list:
-        images_objs_list.append(Image(url=url))
-    session.add_all(images_objs_list)
-    await session.commit()
-    return images_objs_list
 
 
 # TODO: limit images 10

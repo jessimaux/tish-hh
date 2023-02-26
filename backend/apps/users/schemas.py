@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 
-from core_schemas import ImageBase
+from apps.core.schemas import ImageBase
     
 
 class LinkBase(BaseModel):

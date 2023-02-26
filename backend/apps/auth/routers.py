@@ -11,7 +11,7 @@ from jose import jwt, JWTError
 
 import settings
 from dependencies import get_session
-from email_client import send_retrieve_password_link, send_verification_code
+from apps.core.email import send_retrieve_password_link, send_verification_code
 from apps.users.models import User
 from apps.users.schemas import UserCreate
 from apps.users.crud import check_email, check_username

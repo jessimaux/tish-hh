@@ -5,11 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 
-from models import Image
-from .models import *
-from .schemas import *
 import crud
 import settings
+from apps.core.models import Image
+from .models import *
+from .schemas import *
 
 
 async def get_category_or_404(session: AsyncSession, category_name: str):
