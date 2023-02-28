@@ -33,11 +33,11 @@ async def login_for_access_token(response: Response,
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-    access_token = create_access_token(user.email, scopes=form_data.scopes)
+    access_token = create_access_token(user.email, scopes=USER_SCOPE)
     refresh_token = create_refresh_token(user.email)
 
-    response.set_cookie('access_token', access_token,
-                        settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+    # response.set_cookie('access_token', access_token,
+    #                     settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60)
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 

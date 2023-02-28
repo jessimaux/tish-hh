@@ -9,6 +9,8 @@ import settings
 from apps.users.models import User
 
 
+USER_SCOPE = ['me', 'users', 'categories', 'events', 'signs', 'tags']
+
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
