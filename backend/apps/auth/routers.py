@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
     File, UploadFile, BackgroundTasks, Security
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from jose import jwt, JWTError
@@ -12,6 +12,7 @@ from jose import jwt, JWTError
 import settings
 from dependencies import get_session
 from apps.core.email import send_retrieve_password_link, send_verification_code
+from apps.core.models import Session
 from apps.users.models import User
 from apps.users.schemas import UserCreate
 from apps.users.crud import check_email, check_username
@@ -24,7 +25,8 @@ router = APIRouter()
 
 
 @router.post("/auth/token/", tags=['auth'], response_model=TokenPare)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
+async def login_for_access_token(request: Request,
+                                 form_data: OAuth2PasswordRequestForm = Depends(),
                                  session: AsyncSession = Depends(get_session)):
     user = await authenticate_user(session, form_data.username, form_data.password)
     if not user:
@@ -33,7 +35,13 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
         )
     access_token = create_access_token(user.username, scopes=form_data.scopes)
-    refresh_token = create_refresh_token(user.username)
+    refresh_token = create_refresh_token(
+        user.username, scopes=form_data.scopes)
+
+    client_session = Session(
+        user_id=user.id, client=request.client.host, refresh_token=refresh_token)
+    session.add(client_session)
+    await session.commit()
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 
@@ -52,8 +60,17 @@ async def refresh_token(token: Token,
     if not user_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect username or password")
-    access_token = create_access_token(user_obj.username, scopes=USER_SCOPE)
-    refresh_token = create_refresh_token(user_obj.username)
+    access_token = create_access_token(
+        user_obj.username, scopes=payload['scopes'])
+    refresh_token = create_refresh_token(
+        user_obj.username, scopes=payload["scopes"])
+
+    await session.execute(update(Session)
+                          .where(Session.user_id == user_obj.id,
+                                 Session.refresh_token == token.token)
+                          .values(refresh_token=refresh_token))
+    await session.commit()
+
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 

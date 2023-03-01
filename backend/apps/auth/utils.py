@@ -35,14 +35,14 @@ def create_access_token(username: str, scopes: list[str] = [], expires_delta: in
     return encoded_jwt
 
 
-def create_refresh_token(username: str, expires_delta: int = None):
+def create_refresh_token(username: str, scopes: list[str] = [], expires_delta: int = None):
     if expires_delta is not None:
         expires_delta = datetime.utcnow() + expires_delta
     else:
         expires_delta = datetime.utcnow(
         ) + timedelta(minutes=settings.JWT_REFRESH_TOKEN_EXPIRE_MINUTES)
 
-    to_encode = {"exp": expires_delta, "username": username}
+    to_encode = {"exp": expires_delta, "username": username, "scopes": scopes}
     encoded_jwt = jwt.encode(
         to_encode, settings.JWT_REFRESH_SECRET_KEY, settings.JWT_ALGORITHM)
     return encoded_jwt

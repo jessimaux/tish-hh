@@ -6,6 +6,20 @@ from apps.users.models import User
 from apps.events.models import Event
 
 
+class Session(Base):
+    __tablename__ = "sessions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+    client = Column(String(255))
+    refresh_token = Column(String(255))
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    user = relationship('User', backref='sessions')
+
+
 class Image(Base):
     __tablename__ = "images"
     
@@ -23,6 +37,9 @@ class Image(Base):
     event = relationship('Event',
                         back_populates='images',
                         primaryjoin="and_(remote(Event.id) == foreign(Image.object_id), Image.object_type == 'Event')")
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
     
 class Notification(Base):
     __tablename__ = 'notification'
