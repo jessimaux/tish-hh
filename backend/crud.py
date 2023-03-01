@@ -4,8 +4,7 @@ from database import Base
 
 
 async def update_fg(fg_objects: list, model: Base, data: list, session: AsyncSession) -> None:
-    """ 
-    Method to allow update foreign key objects.
+    """ Method to allow update foreign key objects.
     
     Args:
         fg_objs: List of foreign key objects.

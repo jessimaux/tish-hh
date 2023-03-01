@@ -1,6 +1,5 @@
-from sqlalchemy_utils import generic_relationship
-from sqlalchemy import Column, Integer, Unicode, String, and_, text
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, Integer, Unicode, String, ForeignKey, DateTime, and_, text,  func
+from sqlalchemy.orm import relationship
 
 from database import Base
 from apps.users.models import User
@@ -25,3 +24,29 @@ class Image(Base):
                         back_populates='images',
                         primaryjoin="and_(remote(Event.id) == foreign(Image.object_id), Image.object_type == 'Event')")
     
+class Notification(Base):
+    __tablename__ = 'notification'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    notification_type_id = Column(Integer, ForeignKey("notification_type.id", ondelete='CASCADE'))
+    object_type = Column(String(255))
+    object_id = Column(Integer)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+
+class NotificationType(Base):
+    __tablename__ = 'notification_type'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    template = Column(String)
+    description = Column(String(255))
+    
+
+class NotificationSender(Base):
+    __tablename__ = 'notification_sender'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    triger_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+    notifier_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+    notification_id = Column(Integer, ForeignKey('notification.id'))

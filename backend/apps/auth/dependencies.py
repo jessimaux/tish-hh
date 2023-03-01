@@ -48,7 +48,7 @@ async def get_current_user(security_scopes: SecurityScopes,
             headers={"WWW-Authenticate": "Bearer"},
         )
     user = (await session.execute(select(User)
-                                  .where(User.email == token_data.email))).scalar()
+                                  .where(User.username == token_data.username))).scalar()
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

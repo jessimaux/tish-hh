@@ -3,7 +3,7 @@ import os
 from fastapi import status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 import crud
 import settings
@@ -98,6 +98,7 @@ async def create_event(event: EventCreate, session: AsyncSession):
     return event_obj
 
 
+# TODO: add delete from Image table
 async def edit_event(event: EventCreate, event_obj: Event, session: AsyncSession):
     for attr, value in event:
         if attr not in ['tags', 'dates', 'characteristics', 'links', 'contacts', 'qas', 'images']:
@@ -107,13 +108,19 @@ async def edit_event(event: EventCreate, event_obj: Event, session: AsyncSession
     await crud.update_fg(event_obj.contacts, Contact, event.contacts, session)
     await crud.update_fg(event_obj.qas, QA, event.qas, session)
     await event_tags_update(event, event_obj, session)
+    
     # Delete image from server/db if that doesnt exist in request
     imgs_id_request = [img.id for img in event.images] 
     for img_obj in event_obj.images:
         if img_obj.id not in imgs_id_request:
+            # delete file
             file_path = os.path.join(settings.BASEDIR, img_obj.image[1:])
             if os.path.exists(file_path):
                 os.remove(file_path)
+            # delete from Image db table
+            await session.execute(delete(Image).where(Image.id == img_obj.id))
+            # delete from object
             event_obj.images.remove(img_obj)
+    
     await session.commit()
     return event_obj

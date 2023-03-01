@@ -19,6 +19,8 @@ export const useAuthStore = defineStore({
         errors: null,
     }),
     actions: {
+        // at in coockie, rt localstorage
+
         async getCurrentUser() {
             this.errors = null
             this.isLoading = true

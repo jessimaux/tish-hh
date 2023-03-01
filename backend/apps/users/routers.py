@@ -6,6 +6,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+import settings
 from dependencies import get_session
 from apps.core.models import Image
 from apps.core.utils import handle_file_upload
@@ -25,7 +26,7 @@ async def get_user_me(current_user: UserRetrieve = Security(get_current_active_u
     return current_user
 
 
-@router.post('/users/me/', tags=['me'])
+@router.put('/users/me/', tags=['me'])
 async def update_user(user: UserUpdate,
                       current_user: UserRetrieve = Security(
                           get_current_active_user, scopes=['me']),
@@ -34,13 +35,35 @@ async def update_user(user: UserUpdate,
     return JSONResponse({}, status_code=status.HTTP_200_OK)
 
 
-# TODO: .
-@router.post('/users/me/photo/', tags=['me'])
-async def update_photo(image: UploadFile,
+@router.put('/users/me/photo/', tags=['me'])
+async def update_photo(image_id: int,
                        current_user: UserRetrieve = Security(
                            get_current_active_user, scopes=['me']),
                        session: AsyncSession = Depends(get_session)):
-    pass
+    try:
+        image_obj = (await session.execute(select(Image)
+                                            .where(Image.id == image_id))).scalar()
+        image_obj.object_type = 'User'
+        image_obj.object_id = current_user.id
+    finally:
+        file_path = os.path.join(settings.BASEDIR, current_user.image.url[1:])
+        if os.path.exists(file_path):
+                os.remove(file_path)
+        await session.execute(delete(Image).where(Image.id == current_user.image.id))
+    await session.commit()
+    return JSONResponse({}, status_code=status.HTTP_200_OK)
+
+
+@router.delete('/users/me/photo/', tags=['me'])
+async def delete_photo(current_user: UserRetrieve = Security(
+                           get_current_active_user, scopes=['me']),
+                       session: AsyncSession = Depends(get_session)):
+    file_path = os.path.join(settings.BASEDIR, current_user.image.url[1:])
+    if os.path.exists(file_path):
+            os.remove(file_path)
+    await session.execute(delete(Image).where(Image.id == current_user.image.id))
+    await session.commit()
+    return JSONResponse({}, status_code=status.HTTP_202_ACCEPTED)
 
 
 @router.post('/users/me/change_password/', tags=['me'])
@@ -57,6 +80,12 @@ async def change_password(password_form: UserPasswordChange,
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Incorrect old password"
         )
+
+
+@router.get('/users/me/notifications/', tags=['me'])
+async def get_notifications(current_user: UserRetrieve = Security(get_current_active_user, scopes=['me']),
+                            session: AsyncSession = Depends(get_session)):
+    return (await session.scalars(current_user.notifications)).all()
 
 
 @router.get('/users/{username}/', tags=['users'], response_model=UserRetrieve)

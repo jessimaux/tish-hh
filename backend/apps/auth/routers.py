@@ -32,8 +32,8 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-    access_token = create_access_token(user.email, scopes=USER_SCOPE)
-    refresh_token = create_refresh_token(user.email)
+    access_token = create_access_token(user.username, scopes=USER_SCOPE)
+    refresh_token = create_refresh_token(user.username)
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 
@@ -48,12 +48,12 @@ async def refresh_token(token: Token,
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not validate token"
         )
-    user_obj = (await session.execute(select(User).where(User.email == payload['email']))).scalar()
+    user_obj = (await session.execute(select(User).where(User.username == payload['username']))).scalar()
     if not user_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect username or password")
-    access_token = create_access_token(user_obj.email, scopes=USER_SCOPE)
-    refresh_token = create_refresh_token(user_obj.email)
+    access_token = create_access_token(user_obj.username, scopes=USER_SCOPE)
+    refresh_token = create_refresh_token(user_obj.username)
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 
@@ -118,7 +118,7 @@ async def retrieve_password(token: str,
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not validate token"
         )
-    user_obj = (await session.execute(select(User).where(User.email == jwt_decoded['email']))).scalar()
+    user_obj = (await session.execute(select(User).where(User.username == jwt_decoded['username']))).scalar()
     if not user_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid code or user doesn't exist")
@@ -143,7 +143,7 @@ async def retrieve_password(token: str,
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not validate token"
         )
-    user_obj = (await session.execute(select(User).where(User.email == jwt_decoded['email']))).scalar()
+    user_obj = (await session.execute(select(User).where(User.username == jwt_decoded['username']))).scalar()
     if not user_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid code or user doesn't exist")
@@ -155,7 +155,7 @@ async def retrieve_password(token: str,
 
 @router.get('/auth/verifyemail/{token}/', tags=['auth'])
 async def verify_email(token: str,
-                 session: AsyncSession = Depends(get_session)):
+                       session: AsyncSession = Depends(get_session)):
     try:
         jwt_decoded = jwt.decode(
             token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
@@ -169,7 +169,7 @@ async def verify_email(token: str,
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not validate token"
         )
-    user_obj = (await session.execute(select(User).where(User.email == jwt_decoded['email']))).scalar()
+    user_obj = (await session.execute(select(User).where(User.username == jwt_decoded['username']))).scalar()
     if not user_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid code or user doesn't exist")
@@ -180,5 +180,3 @@ async def verify_email(token: str,
     await session.commit()
     return JSONResponse({"message": "Account verified successfully"},
                         status_code=status.HTTP_200_OK)
-
-

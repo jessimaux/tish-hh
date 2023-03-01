@@ -29,10 +29,10 @@ env = Environment(
     autoescape=select_autoescape(['html', 'xml'])
 )
 
-async def send_verification_code(user: User, request: Request, session: Session):
+async def send_verification_code(user: User, request: Request):
     template = env.get_template(f'verification.html')
     
-    to_encode = {"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=10), "email": str(user.email)}
+    to_encode = {"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=10), "username": user.username}
     encoded_jwt = jwt.encode(to_encode, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
     url = f"{request.url.scheme}://{request.client.host}:{request.url.port}/auth/verifyemail/{encoded_jwt}"
     
@@ -58,7 +58,7 @@ async def send_verification_code(user: User, request: Request, session: Session)
 async def send_retrieve_password_link(user: User, request: Request):
     template = env.get_template(f'password_retrieve.html')
     
-    to_encode = {"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=10), "email": str(user.email)}
+    to_encode = {"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=10), "username": user.username}
     encoded_jwt = jwt.encode(to_encode, settings.JWT_RETRIEVE_PASSWORD_SECRET_KEY, settings.JWT_ALGORITHM)
     url = f"{request.url.scheme}://{request.client.host}:{request.url.port}/auth/retrieve_password/{encoded_jwt}"
     

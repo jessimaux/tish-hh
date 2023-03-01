@@ -23,14 +23,15 @@ class User(Base):
     city = Column(String(255), nullable=True)
 
     image = relationship('Image',
-                          back_populates='user',
-                          uselist=False,
-                          primaryjoin="and_(User.id == foreign(Image.object_id), Image.object_type == 'User')",
-                          lazy='selectin')
+                         back_populates='user',
+                         uselist=False,
+                         primaryjoin="and_(User.id == foreign(Image.object_id), Image.object_type == 'User')",
+                         lazy='selectin')
 
     signs = relationship('Sign', back_populates='user', lazy='dynamic')
     links = relationship("Link", backref="user", lazy="selectin")
 
+    # TODO: something wrong with primary/secondary join
     following = relationship('User',
                              secondary="users__subscriptions",
                              primaryjoin="User.id==Subscription.subscriber_id",
@@ -41,6 +42,12 @@ class User(Base):
                              primaryjoin="User.id==Subscription.publisher_id",
                              secondaryjoin="User.id==Subscription.subscriber_id",
                              lazy="dynamic")
+
+    notifications = relationship('Notification',
+                                 secondary='notification_sender',
+                                 primaryjoin="User.id==NotificationSender.notifier_id",
+                                 secondaryjoin="NotificationSender.notification_id==Notification.id",
+                                 lazy='dynamic')
 
     is_verifed = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
