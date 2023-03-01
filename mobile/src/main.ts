@@ -1,7 +1,9 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router';
+
 import { createPinia } from 'pinia'
+import { useAuthStore } from './stores/auth';
 
 import { IonicVue } from '@ionic/vue';
 
@@ -24,12 +26,24 @@ import '@ionic/vue/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
-const pinia = createPinia()
-const app = createApp(App)
-  .use(IonicVue)
-  .use(pinia)
-  .use(router);
-  
-router.isReady().then(() => {
+startApp();
+
+// async start function to enable waiting for refresh token call
+async function startApp() {
+  const pinia = createPinia()
+
+  const app = createApp(App)
+    .use(IonicVue)
+    .use(pinia)
+    .use(router);
+
+  // attempt to auto refresh token before startup
+  try {
+    const authStore = useAuthStore();
+    await authStore.refreshToken();
+  } catch {
+    // catch error to start app on success or failure
+  }
+
   app.mount('#app');
-});
+}

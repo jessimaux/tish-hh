@@ -24,8 +24,7 @@ router = APIRouter()
 
 
 @router.post("/auth/token/", tags=['auth'], response_model=TokenPare)
-async def login_for_access_token(response: Response,
-                                 form_data: OAuth2PasswordRequestForm = Depends(),
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
                                  session: AsyncSession = Depends(get_session)):
     user = await authenticate_user(session, form_data.username, form_data.password)
     if not user:
@@ -35,13 +34,10 @@ async def login_for_access_token(response: Response,
         )
     access_token = create_access_token(user.email, scopes=USER_SCOPE)
     refresh_token = create_refresh_token(user.email)
-
-    # response.set_cookie('access_token', access_token,
-    #                     settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60)
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post('/auth/refresh/', tags=['auth'], response_model=Token)
+@router.post('/auth/refresh/', tags=['auth'], response_model=TokenPare)
 async def refresh_token(token: Token,
                         session: AsyncSession = Depends(get_session)):
     try:
@@ -56,8 +52,9 @@ async def refresh_token(token: Token,
     if not user_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect username or password")
-    access_token = create_access_token(user_obj.email)
-    return Token(token=access_token)
+    access_token = create_access_token(user_obj.email, scopes=USER_SCOPE)
+    refresh_token = create_refresh_token(user_obj.email)
+    return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post("/auth/registration/", tags=['auth'], response_model=UserRetrieve)

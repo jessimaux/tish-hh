@@ -29,7 +29,10 @@ app.mount("/media", StaticFiles(directory=settings.MEDIADIR), name="media")
 
 # CORS section
 origins = [
-    "http://localhost:8100",
+    'http://localhost',
+    'http://127.0.0.1',
+    'http://localhost:8100',
+    'http://127.0.0.1:8100',
 ]
 
 app.add_middleware(

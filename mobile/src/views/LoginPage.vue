@@ -51,7 +51,8 @@ export default defineComponent({
       form.append('username', this.user.username)
       form.append('password', this.user.password)
       this.authStore.login(form)
-      .then(()=>{
+      .then(async ()=>{
+        await this.authStore.getCurrentUser()
         this.$router.push({ name: 'home'})
       })
     }

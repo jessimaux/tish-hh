@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import authApi from '@/api/auth';
+import {getCookie} from '@/tools/core'
 
 
 interface AuthState {
@@ -19,6 +20,7 @@ export const useAuthStore = defineStore({
     }),
     actions: {
         async getCurrentUser() {
+            this.errors = null
             this.isLoading = true
             await authApi.getCurrentUser()
                 .then((response) => {
@@ -33,30 +35,49 @@ export const useAuthStore = defineStore({
 
         async login(user: object) {
             this.errors = null
+            this.isLoading = true
             await authApi.login(user)
-                .then((response) => {
+                .then(async (response) => {
                     localStorage.setItem('accessToken', response.data.access_token)
+                    document.cookie = `refreshToken=${response.data.refresh_token}`
+                    this.isLoading = false
                 })
                 .catch((result) => {
                     this.errors = result.response.data
+                    this.isLoading = false
                     throw result.response.data
                 })
             this.startRefreshTokenTimer();
         },
 
         logout() {
+            this.currentUser = null
+            localStorage.removeItem('accessToken')
+            document.cookie = 'refreshToken='
             this.stopRefreshTokenTimer();
         },
 
         async refreshToken() {
+            this.errors = null
+            this.isLoading = true
+            const refreshToken  = getCookie('refreshToken')
+            await authApi.refresh(refreshToken)
+            .then(async (response) => {
+                localStorage.setItem('accessToken', response.data.access_token)
+                document.cookie = `refreshToken=${response.data.refresh_token}`
+                this.isLoading = false
+            })
+            .catch((result) => {
+                this.errors = result.response.data
+                this.isLoading = false
+                throw result.response.data
+            })
             this.startRefreshTokenTimer();
         },
 
         startRefreshTokenTimer() {
             // set a timeout to refresh the token a minute before it expires
-            const expires = new Date(14 * 1000);
-            const timeout = expires.getTime() - Date.now() - (60 * 1000);
-            this.refreshTokenTimeout = setTimeout(this.refreshToken, timeout);
+            this.refreshTokenTimeout = setTimeout(this.refreshToken, process.env.VUE_APP_JWT_ACCESS_TOKEN_EXPIRE_MINUTES);
         },
         
         stopRefreshTokenTimer() {
