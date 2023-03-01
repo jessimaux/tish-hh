@@ -1,6 +1,7 @@
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, func
+from sqlalchemy.orm import aliased
 from fastapi import HTTPException
 from pydantic import EmailStr
 
@@ -9,11 +10,9 @@ from .schemas import *
 import crud
 
 
-async def get_user_or_404(session: AsyncSession, username: str | None = None, email: str | None = None):
-    if username:
-        user_obj = (await session.execute(select(User).where(User.username == username))).scalar()
-    elif email:
-        user_obj = (await session.execute(select(User).where(User.email == email))).scalar()
+async def get_user_or_404(username: str, session: AsyncSession):
+    user_obj = (await session.execute(select(User)
+                                      .where(User.username == username))).scalar()
     if user_obj:
         return user_obj
     else:
@@ -22,7 +21,8 @@ async def get_user_or_404(session: AsyncSession, username: str | None = None, em
 
 
 async def check_username(username: str, session: AsyncSession):
-    check = (await session.execute(select(User).where(User.username == username))).scalar()
+    check = (await session.execute(select(User)
+                                   .where(User.username == username))).scalar()
     if check:
         return True
     else:
@@ -30,7 +30,8 @@ async def check_username(username: str, session: AsyncSession):
 
 
 async def check_email(email: EmailStr, session: AsyncSession):
-    check = (await session.execute(select(User).where(User.email == email))).scalar()
+    check = (await session.execute(select(User)
+                                   .where(User.email == email))).scalar()
     if check:
         return True
     else:
@@ -53,7 +54,7 @@ async def update_user(user: UserUpdate, current_user: User, session: AsyncSessio
                             detail="Max count of user's links is 5")
     for attr, value in user:
         if attr not in ['links']:
-            # check on username exists when change username 
+            # check on username exists when change username
             if attr == 'username' and value != current_user.username:
                 if not check_username(user.username):
                     raise HTTPException(

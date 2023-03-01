@@ -43,7 +43,12 @@ class UserUpdate(UserBase):
     
 class UserRetrieve(UserUpdate):
     id: int
-    image: ImageBase
+    image: ImageBase | None
+    
+    
+class UserGet(UserRetrieve):
+    followers_count: int
+    following_count: int
     
     
 class SubscriptionBase(BaseModel):

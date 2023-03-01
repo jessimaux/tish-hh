@@ -11,6 +11,10 @@ class CategoryBase(BaseModel):
         orm_mode = True
         
 
+class CategoryRetrieve(CategoryBase):
+    events_count: int
+        
+
 class ImageBase(BaseModel):
     id: int | None
     image: str

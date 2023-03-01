@@ -32,7 +32,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-    access_token = create_access_token(user.username, scopes=USER_SCOPE)
+    access_token = create_access_token(user.username, scopes=form_data.scopes)
     refresh_token = create_refresh_token(user.username)
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 

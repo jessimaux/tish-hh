@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Security, Query, UploadFile
 from fastapi.responses import JSONResponse
-from sqlalchemy import select, delete, or_
+from sqlalchemy import select, delete, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from dependencies import get_session
-from apps.core.models import Image
-from apps.core.utils import handle_file_upload
 from apps.auth.dependencies import get_current_active_user
 from apps.users.schemas import UserRetrieve
 from .models import *
@@ -20,12 +18,14 @@ router = APIRouter()
 """ Catgories """
 
 
-@router.get("/categories/", tags=['categories'])
+@router.get("/categories/", tags=['categories'], response_model=list[CategoryRetrieve])
 async def get_categories(current_user: UserRetrieve = Security(get_current_active_user, scopes=['categories']),
                          session: AsyncSession = Depends(get_session)):
-    categories_res = await session.execute(select(Category))
-    categories_objs = categories_res.scalars().all()
-    return categories_objs
+    categories = await session.execute(select(Category.id, Category.name, func.count(Event.id))
+                                       .join(Event, Category.id == Event.category_id, isouter=True)
+                                       .group_by(Category.id)
+                                       .order_by(func.count(Event.id).desc()))
+    return [CategoryRetrieve(id=category[0], name=category[1], events_count=category[2]) for category in categories]
 
 
 # TODO: add list of tags filter

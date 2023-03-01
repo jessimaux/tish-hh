@@ -88,13 +88,20 @@ async def get_notifications(current_user: UserRetrieve = Security(get_current_ac
     return (await session.scalars(current_user.notifications)).all()
 
 
-@router.get('/users/{username}/', tags=['users'], response_model=UserRetrieve)
+@router.get('/users/{username}/', tags=['users'])
 async def get_user(username: str,
                    current_user: UserRetrieve = Security(
                        get_current_active_user, scopes=['me']),
                    session: AsyncSession = Depends(get_session)):
-    user_obj = await crud.get_user_or_404(username=username, session=session)
-    return user_obj
+    subq_followers = (select(func.count('*')).select_from(Subscription)
+                      .where(Subscription.publisher_id == current_user.id)
+                      .subquery())
+    subq_following = (select(func.count('*')).select_from(Subscription)
+                      .where(Subscription.subscriber_id == current_user.id)
+                      .subquery())
+    user = (await session.execute(select(User, subq_followers, subq_following)
+                                  .where(User.username == username))).first()
+    return UserGet(**user[0].__dict__, followers_count=user[1], following_count=user[2])
 
 
 @router.get('/users/{username}/followers/', tags=['users'], response_model=list[UserRetrieve])
