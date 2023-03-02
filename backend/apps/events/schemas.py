@@ -1,6 +1,4 @@
-from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import Literal
 
 
 class CategoryBase(BaseModel):
@@ -91,7 +89,7 @@ class EventCreate(EventBase):
     contacts: list[ContactBase]
     characteristics: list[CharacteristicBase]
     qas: list[QABase]
-    images: list[int] | None
+    images: list[int] | None = Field(..., max_items=10)
 
 
 class EventRetrieve(EventCreate):

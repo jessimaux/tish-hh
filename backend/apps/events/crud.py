@@ -8,6 +8,7 @@ from sqlalchemy import select, delete
 import crud
 import settings
 from apps.core.models import Image
+from apps.users.models import User
 from .models import *
 from .schemas import *
 
@@ -53,7 +54,7 @@ async def event_tags_update(event: EventCreate, event_obj: Event, session: Async
             event_obj.tags.remove(tag_obj)
             
 
-async def create_event(event: EventCreate, session: AsyncSession):
+async def create_event(event: EventCreate, user: User, session: AsyncSession):
     event_obj = Event()
     for attr, value in event:
         if attr in ['tags', 'characteristics', 'links', 'contacts', 'qas', 'images']:
@@ -83,7 +84,7 @@ async def create_event(event: EventCreate, session: AsyncSession):
     for qa in event.qas:
         event_obj.qas.append(QA(quest=qa.quest,
                                 answer=qa.answer))
-        
+    event_obj.created_by = user.id
     session.add(event_obj)
     await session.flush()
     
@@ -98,7 +99,6 @@ async def create_event(event: EventCreate, session: AsyncSession):
     return event_obj
 
 
-# TODO: add delete from Image table
 async def edit_event(event: EventCreate, event_obj: Event, session: AsyncSession):
     for attr, value in event:
         if attr not in ['tags', 'dates', 'characteristics', 'links', 'contacts', 'qas', 'images']:

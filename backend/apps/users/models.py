@@ -31,7 +31,6 @@ class User(Base):
     signs = relationship('Sign', back_populates='user', lazy='dynamic')
     links = relationship("Link", backref="user", lazy="selectin")
 
-    # TODO: something wrong with primary/secondary join
     following = relationship('User',
                              secondary="users__subscriptions",
                              primaryjoin="User.id==Subscription.subscriber_id",

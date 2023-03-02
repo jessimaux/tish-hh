@@ -28,21 +28,25 @@ async def get_categories(current_user: UserRetrieve = Security(get_current_activ
     return [CategoryRetrieve(id=category[0], name=category[1], events_count=category[2]) for category in categories]
 
 
-# TODO: add list of tags filter
 @router.get("/categories/{category_name}/", tags=['categories'], response_model=list[EventBase])
 async def get_events_from_category(category_name: str,
-                                   tag: str | None = None,
+                                   tags: list[str] | None = Query(default=None),
                                    current_user: UserRetrieve = Security(
                                        get_current_active_user, scopes=['categories']),
                                    session: AsyncSession = Depends(get_session)):
     category = await crud.get_category_or_404(session, category_name)
     statement = (select(Event)
-                 .join(TagEvent, TagEvent.event_id == Event.id)
-                 .join(Tag, Tag.id == TagEvent.tag_id)
+                 .join(Event.tags, isouter=True)
                  .where(Event.category_id == category.id))
-    if tag:
-        statement = statement.where(Tag.name.ilike(tag))
-    events = (await session.execute(statement)).scalars().all()
+    if tags:
+        filters = None
+        for tag in tags:
+            if filters is not None:
+                filters |= Tag.name.ilike(tag)
+            else:
+                filters = Tag.name.ilike(tag)
+        statement = statement.where(filters)
+    events = (await session.execute(statement.distinct(Event.id))).scalars().all()
     return events
 
 
@@ -74,8 +78,8 @@ async def get_events(tags: list[str] | None = Query(default=None),
             else:
                 filters = Tag.name.ilike(tag)
         statement = statement.where(filters)
-    events = await session.execute(statement.distinct(Event.id))
-    return events.scalars().all()
+    events = (await session.execute(statement.distinct(Event.id))).scalars().all()
+    return events
 
 
 @router.get("/events/{id}/", tags=['events'], response_model=EventRetrieve)
@@ -87,30 +91,26 @@ async def get_event(id: int,
     return event_obj
 
 
-# TODO: limit images 10
-# TODO: created by
 @router.post("/events/", tags=['events'])
 async def create_event(event: EventCreate,
                        current_user: UserRetrieve = Security(
                            get_current_active_user, scopes=['events']),
                        session: AsyncSession = Depends(get_session)):
-    event_obj = await crud.create_event(event, session)
+    event_obj = await crud.create_event(event, current_user, session)
     return JSONResponse({}, status_code=status.HTTP_201_CREATED)
 
 
-# TODO: limit images 10
 @router.put("/events/{id}/", tags=['events'])
 async def edit_event(id: int,
                      event: EventCreate,
-                     images: list[UploadFile] | None = None,
                      current_user: UserRetrieve = Security(
                          get_current_active_user, scopes=['events']),
                      session: AsyncSession = Depends(get_session)):
     event_obj = await crud.get_event(id, session)
-    # TODO: check created_by empty?
-    # if event_obj.created_by != current_user.id:
-    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-    #                         detail="Not enough permissions")
+    # check on current user is owner
+    if event_obj.created_by != current_user.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Not enough permissions")
     event_obj = await crud.edit_event(event, event_obj, session)
     return JSONResponse({}, status_code=status.HTTP_200_OK)
 
