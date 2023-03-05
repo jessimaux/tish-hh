@@ -1,72 +1,61 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true">
-      <div id="container">
-        <ion-label position="stacked">Login</ion-label>
-        <ion-input placeholder="Username or email" v-model="user.username" required></ion-input>
+      <div class="container">
+        <div class="logo">
+          <img class="logo" src="@/assets/images/logo/512w/logo.png">
+        </div>
 
-        <ion-label position="stacked">Password</ion-label>
-        <ion-input type="password" placeholder="Password" v-model="user.password" required></ion-input>
+        <div class="authorization">
+          <div class="ion-item-wrapper">
+            <ion-item lines="none">
+              <ion-input class='base' placeholder="Username or email" v-model="username"></ion-input>
+            </ion-item>
+          </div>
+          <div class="ion-item-wrapper">
+            <ion-item lines="none">
+              <ion-input class='base' type="password" placeholder="Password" v-model="password"></ion-input>
+            </ion-item>
+            <router-link class="helper" :to="{ name: 'reset-password' }">Forgot your password?</router-link>
+          </div>
+        </div>
 
-        <ion-button @click="onSubmit">Login</ion-button>
+        <div class="footer">
+          <ion-button type="submit" shape="round" fill="outline" @click="onSubmit">Login</ion-button>
+          <div class="text-botoom">
+            <p>Don't have an account? <router-link :to="{ name: 'register' }">Sign up</router-link></p>
+          </div>
+        </div>
       </div>
     </ion-content>
   </ion-page>
 </template>
 
-<script lang="ts">
-import { useRouter } from 'vue-router';
-import { defineComponent } from 'vue';
-import {
-  IonContent, IonPage, IonInput, IonLabel, IonButton,
-} from '@ionic/vue';
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { IonContent, IonPage, IonItem, IonInput, IonButton } from '@ionic/vue';
 import { useAuthStore } from '@/stores/auth';
 
-export default defineComponent({
-  name: 'LoginPage',
-  components: {
-    IonContent,
-    IonPage,
-    IonInput,
-    IonLabel,
-    IonButton,
-  },
-  setup() {
-    return {
-      // router: useRouter(),
-      authStore: useAuthStore()
-    }
-  },
-  data() {
-    return {
-      user: {
-        username: '',
-        password: '',
-      }
-    }
-  },
-  methods: {
-    onSubmit(){
-      const form = new FormData()
-      form.append('username', this.user.username)
-      form.append('password', this.user.password)
-      this.authStore.login(form)
-      .then(async ()=>{
-        await this.authStore.getCurrentUser()
-        this.$router.push({ name: 'home'})
+const router = useRouter()
+const authStore = useAuthStore()
+
+const username = ref('')
+const password = ref('')
+
+async function onSubmit() {
+  if (!!username.value.trim() && !!password.value.trim()) {
+    const form = new FormData()
+    form.append('username', username.value)
+    form.append('password', password.value)
+    await authStore.login(form)
+      .then(() => {
+        router.push({ name: 'home' })
       })
-    }
   }
-});
+}
 </script>
 
 <style scoped>
-#container {
-  text-align: center;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
+@import '@/assets/styles/login.css';
 </style>

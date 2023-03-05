@@ -29,7 +29,7 @@ export const useAuthStore = defineStore({
                     this.isLoading = false
                     this.currentUser = response.data
                 })
-                .catch((result) => {
+                .catch(() => {
                     this.isLoading = false
                     this.currentUser = null
                 })
@@ -42,6 +42,7 @@ export const useAuthStore = defineStore({
                 .then(async (response) => {
                     localStorage.setItem('accessToken', response.data.access_token)
                     document.cookie = `refreshToken=${response.data.refresh_token}`
+                    this.currentUser = {}
                     this.isLoading = false
                 })
                 .catch((result) => {
@@ -52,7 +53,7 @@ export const useAuthStore = defineStore({
             this.startRefreshTokenTimer();
         },
 
-        logout() {
+        async logout() {
             this.currentUser = null
             localStorage.removeItem('accessToken')
             document.cookie = 'refreshToken='
@@ -67,6 +68,7 @@ export const useAuthStore = defineStore({
             .then(async (response) => {
                 localStorage.setItem('accessToken', response.data.access_token)
                 document.cookie = `refreshToken=${response.data.refresh_token}`
+                this.currentUser = {}
                 this.isLoading = false
             })
             .catch((result) => {
@@ -84,6 +86,34 @@ export const useAuthStore = defineStore({
         
         stopRefreshTokenTimer() {
             clearTimeout(this.refreshTokenTimeout);
+        },
+
+        async registration(email: string, username: string, password: string){
+            this.errors = null
+            this.isLoading = true
+            await authApi.registration(email, username, password)
+            .then(() => {
+                this.isLoading = false
+            })
+            .catch((result) => {
+                this.errors = result.response.data
+                this.isLoading = false
+                throw result.response.data
+            })
+        },
+
+        async retrievePassword(login: string) {
+            this.errors = null
+            this.isLoading = true
+            await authApi.retrievePassword(login)
+            .then(() => {
+                this.isLoading = false
+            })
+            .catch((result) => {
+                this.errors = result.response.data
+                this.isLoading = false
+                throw result.response.data
+            })
         }
     }
 });

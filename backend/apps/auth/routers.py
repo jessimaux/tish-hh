@@ -37,8 +37,8 @@ async def login_for_access_token(request: Request,
             detail="Incorrect username or password",
         )
 
-    access_token = create_access_token(user.username, scopes=form_data.scopes)
-    refresh_token = create_refresh_token(user.username, scopes=form_data.scopes)
+    access_token = create_access_token(user.username, scopes=USER_SCOPE)
+    refresh_token = create_refresh_token(user.username, scopes=USER_SCOPE)
 
     client_session = Session(user_id=user.id, client=request.client.host, refresh_token=refresh_token)
     session.add(client_session)
@@ -46,28 +46,13 @@ async def login_for_access_token(request: Request,
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 
+# TODO: delete session if jwt compromicated
 @router.post("/auth/refresh/", tags=["auth"], response_model=TokenPare)
 async def refresh_token(token: Token,
                         session: AsyncSession = Depends(get_session)):
-    # check for existing session
-    client_session = (
-        await session.execute(
-            select(Session).where(
-                Session.user_id == user_obj.id,
-                Session.refresh_token == token.token,
-            )
-        )
-    ).scalar()
-    if not client_session:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session doesnt exist",
-        )
     try:
         payload = jwt.decode(token.token, settings.JWT_REFRESH_SECRET_KEY, settings.JWT_ALGORITHM)
     except JWTError:
-        # delete current session if jwt was compromised
-        await session.delete(client_session)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not validate token",
@@ -81,7 +66,15 @@ async def refresh_token(token: Token,
         )
     access_token = create_access_token(user_obj.username, scopes=payload["scopes"])
     refresh_token = create_refresh_token(user_obj.username, scopes=payload["scopes"])
-
+    # check for existing session
+    client_session = (await session.execute(select(Session)
+                                            .where(Session.user_id == user_obj.id,
+                                                   Session.refresh_token == token.token))).scalar()
+    if not client_session:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session doesnt exist",
+        )
     client_session.refresh_token = refresh_token
     await session.commit()
     return TokenPare(access_token=access_token, refresh_token=refresh_token)

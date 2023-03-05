@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
 import LoginPage from '@/views/LoginPage.vue';
 import HomePage from '@/views/HomePage.vue';
+import RegisterPage from '@/views/RegisterPage.vue';
+import ResetPasswordPage from '@/views/ResetPasswordPage.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -17,6 +18,16 @@ const routes: Array<RouteRecordRaw> = [
     path: '/login/',
     name: 'login',
     component: LoginPage
+  },
+  {
+    path: '/register/',
+    name: 'register',
+    component: RegisterPage
+  },
+  {
+    path: '/reset-password/',
+    name: 'reset-password',
+    component: ResetPasswordPage
   },
 
   // otherwise redirect to home

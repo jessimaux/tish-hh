@@ -16,8 +16,18 @@ const refresh = (refresh_token: string | undefined) => {
   return axios.post('auth/refresh/', { token: refresh_token })
 }
 
+const registration = (email: string, username: string, password: string) => {
+  return axios.post('auth/registration/',  { email: email, username: username, password: password })
+}
+
+const retrievePassword = (login: string) => {
+  return axios.post('auth/send_retrieve_password/', { login: login})
+}
+
 export default {
   login,
   refresh,
+  registration,
+  retrievePassword,
   getCurrentUser,
 }
