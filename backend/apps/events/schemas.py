@@ -107,3 +107,8 @@ class SignBase(BaseModel):
 class SignRetrieve(SignBase):
     id: int
     user_id: int
+    
+    
+class CommentaryBase(BaseModel):
+    id: int | None
+    content: str

@@ -1,16 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Security, Query, UploadFile
+from apps.auth.dependencies import get_current_active_user
+from apps.users.schemas import UserRetrieve
+from dependencies import get_session
+from fastapi import (APIRouter, Depends, HTTPException, Query, Security,
+                     UploadFile, status)
 from fastapi.responses import JSONResponse
-from sqlalchemy import select, delete, or_, func
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from dependencies import get_session
-from apps.auth.dependencies import get_current_active_user
-from apps.users.schemas import UserRetrieve
+from . import crud
 from .models import *
 from .schemas import *
-from . import crud
-
 
 router = APIRouter()
 
@@ -180,4 +180,63 @@ async def delete_sign(id: int,
                             detail='Sign doesnt exist')
     await session.delete(sign_obj)
     await session.commit()
-    return JSONResponse({"message": "Sign deleted successfully"}, status_code=status.HTTP_202_ACCEPTED)
+    return JSONResponse({"message": "Sign deletedu successfully"}, status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.get('/events/{event_id}/commentaries/', tags=['commentaries'], response_model=list[CommentaryBase])
+async def get_commentaries(event_id: int,
+                           current_user: UserRetrieve = Security(
+                               get_current_active_user, scopes=['signs']),
+                           session: AsyncSession = Depends(get_session)):
+    commentaries = (await session.execute(select(Commentary)
+                                          .where(Commentary.event_id == event_id))).scalars().all()
+    return commentaries
+
+
+@router.post('/events/{event_id}/commentaries/', tags=['commentaries'])
+async def create_commentary(event_id: int,
+                            commentary: CommentaryBase,
+                            current_user: UserRetrieve = Security(
+                                get_current_active_user, scopes=['signs']),
+                            session: AsyncSession = Depends(get_session)):
+    commentary_obj = Commentary(event_id=event_id, content=commentary.content)
+    session.add(commentary_obj)
+    await session.commit()
+    return JSONResponse({}, status_code=status.HTTP_201_CREATED)
+
+
+@router.put('/events/{event_id}/commentaries/{commentary_id}', tags=['commentaries'])
+async def edit_commentary(event_id: int,
+                          commentary_id: int,
+                          commentary: CommentaryBase,
+                          current_user: UserRetrieve = Security(
+                              get_current_active_user, scopes=['signs']),
+                          session: AsyncSession = Depends(get_session)):
+    try:
+        await session.execute(update(Commentary)
+                              .where(Commentary.id == commentary_id,
+                                     Commentary.event_id == event_id,
+                                     Commentary.created_by == current_user.id)
+                              .values(content=commentary.content))
+    except:
+        return JSONResponse({}, status_code=status.HTTP_403_FORBIDDEN)
+    finally:
+        return JSONResponse({}, status_code=status.HTTP_200_OK)
+
+
+@router.delete('/events/{event_id}/commentaries/{commentary_id}', tags=['commentaries'])
+async def delete_commentary(event_id: int,
+                            commentary_id: int,
+                            commentary: CommentaryBase,
+                            current_user: UserRetrieve = Security(
+                                get_current_active_user, scopes=['signs']),
+                            session: AsyncSession = Depends(get_session)):
+    try:
+        await session.execute(delete(Commentary)
+                              .where(Commentary.id == commentary_id,
+                                     Commentary.event_id == event_id,
+                                     Commentary.created_by == current_user.id))
+    except:
+        return JSONResponse({}, status_code=status.HTTP_403_FORBIDDEN)
+    finally:
+        return JSONResponse({"message": "Sign deletedu successfully"}, status_code=status.HTTP_202_ACCEPTED)

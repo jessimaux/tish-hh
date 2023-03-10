@@ -115,3 +115,17 @@ class Sign(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    
+class Commentary(Base):
+    __tablename__ = "events__commentary"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(String)
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
+    
+    event = relationship("Event", backref="commentaries")
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_by = Column(Integer, ForeignKey("users.id"))
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_by = Column(Integer, ForeignKey("users.id"))
