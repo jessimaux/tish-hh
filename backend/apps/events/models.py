@@ -117,7 +117,7 @@ class Sign(Base):
     
     
 class Commentary(Base):
-    __tablename__ = "events__commentary"
+    __tablename__ = "events__commentaries"
     
     id = Column(Integer, primary_key=True, index=True)
     content = Column(String)
@@ -129,3 +129,16 @@ class Commentary(Base):
     created_by = Column(Integer, ForeignKey("users.id"))
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     updated_by = Column(Integer, ForeignKey("users.id"))
+    
+
+class Like(Base):
+    __tablename__ = "events__likes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'))
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    event = relationship("Event", backref="likes")
+    user = relationship("User", backref="likes")

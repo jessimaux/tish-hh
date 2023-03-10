@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 class CategoryBase(BaseModel):
@@ -112,3 +113,9 @@ class SignRetrieve(SignBase):
 class CommentaryBase(BaseModel):
     id: int | None
     content: str
+    
+
+class LikeBase(BaseModel):
+    id: int | None
+    event: EventRetrieve
+    created_at: datetime

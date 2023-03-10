@@ -224,18 +224,51 @@ async def edit_commentary(event_id: int,
         return JSONResponse({}, status_code=status.HTTP_200_OK)
 
 
-@router.delete('/events/{event_id}/commentaries/{commentary_id}', tags=['commentaries'])
-async def delete_commentary(event_id: int,
-                            commentary_id: int,
-                            commentary: CommentaryBase,
+@router.delete('/commentaries/{commentary_id}', tags=['commentaries'])
+async def delete_commentary(commentary_id: int,
                             current_user: UserRetrieve = Security(
                                 get_current_active_user, scopes=['signs']),
                             session: AsyncSession = Depends(get_session)):
     try:
         await session.execute(delete(Commentary)
                               .where(Commentary.id == commentary_id,
-                                     Commentary.event_id == event_id,
                                      Commentary.created_by == current_user.id))
+    except:
+        return JSONResponse({}, status_code=status.HTTP_403_FORBIDDEN)
+    finally:
+        return JSONResponse({"message": "Sign deletedu successfully"}, status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.get('/likes/', tags=['likes'], response_model=list[LikeBase])
+async def get_likes(current_user: UserRetrieve = Security(
+        get_current_active_user, scopes=['signs']),
+        session: AsyncSession = Depends(get_session)):
+    likes_obj = (await session.execute(select(Like)
+                                       .where(Like.user_id == current_user.id)
+                                       .options(selectinload(Like.event)))).scalars().all()
+    return likes_obj
+
+
+@router.post('/events/{event_id}/like/', tags=['likes'])
+async def create_likes(event_id: int,
+                       current_user: UserRetrieve = Security(
+                           get_current_active_user, scopes=['signs']),
+                       session: AsyncSession = Depends(get_session)):
+    like_obj = Like(event_id=event_id, user_id=current_user.id)
+    session.add(like_obj)
+    await session.commit()
+    return JSONResponse({}, status_code=status.HTTP_201_CREATED)
+
+
+@router.post('/likes/{id}/', tags=['likes'])
+async def delete_like(id: int,
+                      current_user: UserRetrieve = Security(
+                          get_current_active_user, scopes=['signs']),
+                      session: AsyncSession = Depends(get_session)):
+    try:
+        await session.execute(delete(Like)
+                              .where(Like.id == id,
+                                     Like.user_id == current_user.id))
     except:
         return JSONResponse({}, status_code=status.HTTP_403_FORBIDDEN)
     finally:
