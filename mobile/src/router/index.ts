@@ -1,18 +1,43 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
-import { RouteRecordRaw } from 'vue-router';
 import LoginPage from '@/views/LoginPage.vue';
 import HomePage from '@/views/HomePage.vue';
 import RegisterPage from '@/views/RegisterPage.vue';
 import ResetPasswordPage from '@/views/ResetPasswordPage.vue'
 
-const routes: Array<RouteRecordRaw> = [
+const routes = [
   {
     path: '/',
     name: 'home',
+    redirect: '/feed/'
+  },
+  {
+    path: '/',
     component: HomePage,
     meta: {
       requiresAuth: true,
-    }
+    },
+    children: [
+      {
+        path: '',
+        redirect: '/feed/',
+      },
+      {
+        path: 'feed',
+        component: () => import('@/views/FeedPage.vue')
+      },
+      {
+        path: 'explore',
+        component: () => import('@/views/ExplorePage.vue')
+      },
+      {
+        path: 'search',
+        component: () => import('@/views/SearchPage.vue')
+      },
+      {
+        path: 'me',
+        component: () => import('@/views/MePage.vue')
+      },
+    ]
   },
   {
     path: '/login/',
@@ -35,7 +60,7 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
 

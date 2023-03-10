@@ -47,6 +47,7 @@ class UserRetrieve(UserUpdate):
     
     
 class UserGet(UserRetrieve):
+    events_count: int
     followers_count: int
     following_count: int
     

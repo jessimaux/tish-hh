@@ -1,9 +1,5 @@
 import axios from '@/api/axios'
 
-const getCurrentUser = () => {
-  return axios.get('users/me/')
-}
-
 const login = (user: object) => {
   return axios.post('auth/token/', user, {
     headers: {
@@ -24,10 +20,19 @@ const retrievePassword = (login: string) => {
   return axios.post('auth/send_retrieve_password/', { login: login})
 }
 
+const getCurrentUser = () => {
+  return axios.get('users/me/')
+}
+
+const getUser = (username: string) => {
+  return axios.get(`users/${username}/`)
+}
+
 export default {
   login,
   refresh,
   registration,
   retrievePassword,
   getCurrentUser,
+  getUser,
 }

@@ -93,15 +93,21 @@ async def get_user(username: str,
                    current_user: UserRetrieve = Security(
                        get_current_active_user, scopes=['me']),
                    session: AsyncSession = Depends(get_session)):
+    subq_events = (select(func.count('*')).select_from(Event)
+                      .where(Event.created_by == current_user.id)
+                      .subquery())
     subq_followers = (select(func.count('*')).select_from(Subscription)
                       .where(Subscription.publisher_id == current_user.id)
                       .subquery())
     subq_following = (select(func.count('*')).select_from(Subscription)
                       .where(Subscription.subscriber_id == current_user.id)
                       .subquery())
-    user = (await session.execute(select(User, subq_followers, subq_following)
+    user = (await session.execute(select(User, subq_events, subq_followers, subq_following)
                                   .where(User.username == username))).first()
-    return UserGet(**user[0].__dict__, followers_count=user[1], following_count=user[2])
+    return UserGet(**user[0].__dict__, 
+                   events_count=user[1],
+                   followers_count=user[2], 
+                   following_count=user[3])
 
 
 @router.get('/users/{username}/followers/', tags=['users'], response_model=list[UserRetrieve])

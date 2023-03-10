@@ -78,6 +78,5 @@ async function onSubmit() {
 }
 </script>
 
-<style scoped>
-@import '@/assets/styles/login.css';
+<style lang="css" scoped src="@/assets/styles/login.css">
 </style>

@@ -1,4 +1,4 @@
-h1, h2, h3, h4, h5, h6, p {
+p {
 	margin: 0;
 	padding: 0;
 	border: 0;
@@ -9,12 +9,75 @@ h1, h2, h3, h4, h5, h6, p {
 }
 
 a {
-    color: #fff;
-    text-decoration: none;
+	color: #fff;
+	text-decoration: none;
+}
+
+.semi-bold {
+	font-weight: 600;
 }
 
 .ion-item-wrapper {
 	margin: 8px 0;
 	width: 100%;
-  }
-  
+}
+
+.toolbar-wrapper {
+	display: flex;
+	justify-content: space-between;
+	padding: 16px;
+}
+
+.profile {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.profile .card {
+	flex: 75%;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+}
+
+.profile .information-section {
+	display: flex;
+}
+
+.information-section .profile-image {
+	flex: 30%;
+}
+
+img.thumbnail {
+	border-radius: 50%;
+}
+
+.information-section .user {
+	flex: 70%;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+}
+
+.profile .options-section {
+	margin: 8px 0;
+	display: flex;
+}
+
+.options-section .item {
+	flex: 50%;
+}
+
+.statistics-section {
+	margin: 8px 0;
+	display: flex;
+	justify-content: space-between;
+}
+
+.statistics-section .item {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}

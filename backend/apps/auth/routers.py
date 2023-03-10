@@ -26,9 +26,9 @@ router = APIRouter()
 async def login_for_access_token(request: Request,
                                  form_data: OAuth2PasswordRequestForm = Depends(),
                                  session: AsyncSession = Depends(get_session)):
-    # check for authorazation
-    if request.headers.get("Authorization"):
-        raise HTTPException(status_code=403, detail="Already authenticated")
+    # # check for authorazation
+    # if request.headers.get("Authorization"):
+    #     raise HTTPException(status_code=403, detail="Already authenticated")
 
     user = await authenticate_user(session, form_data.username, form_data.password)
     if not user:

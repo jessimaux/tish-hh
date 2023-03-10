@@ -1,11 +1,12 @@
-import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router';
-
-import { createPinia } from 'pinia'
-import { useAuthStore } from './stores/auth';
-
 import { IonicVue } from '@ionic/vue';
+
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+
+import App from './App.vue'
+import router from './router'
+
+import { useAuthStore } from './stores/auth';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/vue/css/core.css';
@@ -29,24 +30,25 @@ import './theme/variables.css';
 /* Custom css */
 import './assets/styles/style.css';
 
-startApp();
+startApp()
 
-// async start function to enable waiting for refresh token call
 async function startApp() {
-  const pinia = createPinia()
-
   const app = createApp(App)
-    .use(IonicVue)
-    .use(pinia)
-    .use(router);
+
+  app.use(IonicVue)
+  app.use(createPinia())
+  app.use(router)
 
   // attempt to auto refresh token before startup
   try {
-    const authStore = useAuthStore();
-    await authStore.refreshToken();
+    const authStore = useAuthStore()
+    await authStore.refreshToken()
+    await authStore.getCurrentUser()
   } catch {
     // catch error to start app on success or failure
   }
 
-  app.mount('#app');
+  router.isReady().then(() => {
+    app.mount('#app');
+  })
 }
