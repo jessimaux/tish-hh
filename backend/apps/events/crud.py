@@ -94,6 +94,10 @@ async def create_event(event: EventCreate, user: User, session: AsyncSession):
     for image_obj in image_objs:
         image_obj.object_type = 'Event'
         image_obj.object_id = event_obj.id
+        
+    # create self sign
+    sign_obj = Sign(user_id=user.id, event_id=event_obj.id, role='creator')
+    session.add(sign_obj)
     
     await session.commit()
     return event_obj

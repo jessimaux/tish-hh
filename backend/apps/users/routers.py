@@ -182,10 +182,6 @@ async def get_user_events(role: str,
                               get_current_active_user, scopes=['events', 'users']),
                           session: AsyncSession = Depends(get_session)):
     user = await crud.get_user_or_404(username=username, session=session)
-    if role == 'member':
-        return (await session.scalars(user.signs.statement
-                                      .options(selectinload(Sign.event)))).all()
-    elif role == 'creator':
-        return (await session.scalars(user.signs.statement
-                                      .options(selectinload(Sign.event))
-                                      .where(Event.created_by == user.id))).all()
+    return (await session.scalars(user.signs.statement
+                                    .where(Sign.role == role)
+                                    .options(selectinload(Sign.event)))).all()

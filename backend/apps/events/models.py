@@ -106,7 +106,8 @@ class Sign(Base):
 
     user_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'), primary_key=True)
     event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'), primary_key=True)
-    status = Column(String(255))
+    role = Column(String(255))
+    status = Column(String(255), nullable=True)
     
     user = relationship("User", back_populates="signs")
     event = relationship("Event", back_populates="signs")
