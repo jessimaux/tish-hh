@@ -11,6 +11,7 @@ media/
 **.idea
 **.vscode
 **.data
+dump.rdb
 
 # env
 backend/.env

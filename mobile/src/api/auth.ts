@@ -24,15 +24,10 @@ const getCurrentUser = () => {
   return axios.get('users/me/')
 }
 
-const getUser = (username: string) => {
-  return axios.get(`users/${username}/`)
-}
-
 export default {
   login,
   refresh,
   registration,
   retrievePassword,
   getCurrentUser,
-  getUser,
 }

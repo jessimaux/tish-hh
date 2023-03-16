@@ -1,43 +1,74 @@
-import { defineStore } from 'pinia';
-import authApi from '@/api/users';
+import { defineStore } from 'pinia'
+import usersApi from '@/api/users'
 
 interface UserState {
-    data: User | null;
-    isLoading: boolean;
-    errors: object | null;
+  userData: UserBase | null
+  eventsData: object | null
+  isLoading: boolean
+  errors: object | null
 }
 
-interface User {
-    username: string
-    name: string
-    bio: string
-    image: string
-    events_count: number
-    followers_count: number
-    following_count: number
+export interface ProfileLink {
+  id: number
+  name: string
+  link: string
+}
+
+export interface UserBase {
+  username: string
+  name: string
+  bio: string
+  image: string
+  country: string
+  region: string
+  city: string
+  links: ProfileLink[]
+  events_count: number
+  followers_count: number
+  following_count: number
 }
 
 export const useUsersStore = defineStore({
-    id: 'users',
-    state: (): UserState => ({
-        data: null,
-        isLoading: true,
-        errors: null,
-    }),
-    actions: {
-        async getUser(username: string) {
-            this.errors = null
-            this.isLoading = true
-            await authApi.getUser(username)
-            .then((response) => {
-                this.isLoading = false
-                this.data = response.data
-            })
-            .catch((result) => {
-                this.isLoading = false
-                this.errors = result.response
-                throw result.response.data
-            })
-        }
+  id: 'users',
+  state: (): UserState => ({
+    userData: null,
+    eventsData: null,
+    isLoading: true,
+    errors: null
+  }),
+  actions: {
+    async getUser(username: string) {
+      this.userData = null
+      this.errors = null
+      this.isLoading = true
+      await usersApi
+        .getUser(username)
+        .then((response) => {
+          this.isLoading = false
+          this.userData = response.data
+        })
+        .catch((result) => {
+          this.isLoading = false
+          this.errors = result.response.data
+          throw result.response.data
+        })
+    },
+
+    async getUserEvents(username: string, role: string) {
+      this.eventsData = null
+      this.errors = null
+      this.isLoading = true
+      await usersApi
+        .getUserEvents(username, role)
+        .then((response) => {
+          this.isLoading = false
+          this.eventsData = response.data
+        })
+        .catch((result) => {
+          this.isLoading = false
+          this.errors = result.response.data
+          throw result.response.data
+        })
     }
-});
+  }
+})

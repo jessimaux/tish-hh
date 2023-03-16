@@ -8,11 +8,6 @@ p {
 	color: #234477;
 }
 
-a {
-	color: #fff;
-	text-decoration: none;
-}
-
 .semi-bold {
 	font-weight: 600;
 }
@@ -28,6 +23,9 @@ a {
 	padding: 16px;
 }
 
+
+/* PROFILE SECTION */
+
 .profile {
 	display: flex;
 	flex-direction: column;
@@ -35,7 +33,6 @@ a {
 }
 
 .profile .card {
-	flex: 75%;
 	padding: 16px;
 	display: flex;
 	flex-direction: column;
@@ -43,21 +40,35 @@ a {
 
 .profile .information-section {
 	display: flex;
+	flex-direction: column;
 }
 
-.information-section .profile-image {
+.information-section .general {
+	display: flex;
+}
+
+.information-section .general .profile-image {
 	flex: 30%;
 }
 
-img.thumbnail {
+.profile-image .thumbnail {
 	border-radius: 50%;
 }
 
-.information-section .user {
+.information-section .general .user {
 	flex: 70%;
-	padding: 16px;
+	padding: 0 16px;
 	display: flex;
 	flex-direction: column;
+}
+
+.links-wrapper {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.links-wrapper .link {
+	margin-right: 16px;
 }
 
 .profile .options-section {

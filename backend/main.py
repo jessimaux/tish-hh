@@ -11,6 +11,7 @@ from apps.admin.routers import router as admin_router
 from apps.users.routers import router as users_router
 from apps.feed.routers import router as feed_router
 from apps.search.routers import router as search_router
+from apps.messages.routers import router as messages_router
 
 
 app = FastAPI()
@@ -22,6 +23,7 @@ app.include_router(users_router)
 app.include_router(events_router)
 app.include_router(feed_router)
 app.include_router(search_router)
+app.include_router(messages_router)
 app.include_router(admin_router, prefix="/admin", tags=['admin'])
 
 # Static files

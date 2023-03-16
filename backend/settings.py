@@ -20,6 +20,9 @@ DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_HOST = os.getenv('DB_HOST')
 DB_PORT = os.getenv('DB_PORT')
 
+REDIS_HOST = os.getenv('REDIS_HOST')
+REDIS_PORT = os.getenv('REDIS_PORT')
+
 EMAIL_USERNAME=os.getenv('EMAIL_USERNAME')
 EMAIL_PASSWORD=os.getenv('EMAIL_PASSWORD')
 EMAIL_FROM=os.getenv('EMAIL_FROM')

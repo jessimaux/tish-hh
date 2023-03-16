@@ -1,3 +1,8 @@
+a {
+	color: #fff;
+	text-decoration: none;
+}
+
 ion-content::part(background) {
   background: var(--ion-color-secondary);
 }

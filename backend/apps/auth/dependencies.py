@@ -1,7 +1,7 @@
 import datetime
 
-from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, status, Security
+from jose import ExpiredSignatureError, JWTError, jwt
+from fastapi import Depends, HTTPException, WebSocketException, status, Security, Request, WebSocket
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -14,16 +14,23 @@ from .schemas import *
 import settings
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token/",
-                                     scopes={"me": "Read information about the current user.",
-                                             "users": "Read information about users.",
-                                             "events": "Read information about events.",
-                                             "signs": "Read information about signs.",
-                                             "tags": "Read information about tags",
-                                             "categories": "Read information about categories",
-                                             "admin": "Admin's privilleges"},)
+class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
+    async def __call__(self, request: Request = None, websocket: WebSocket = None):
+        return await super().__call__(request or websocket)
 
 
+oauth2_scheme = CustomOAuth2PasswordBearer(tokenUrl="/auth/token/",
+                                           scopes={"me": "Read information about the current user.",
+                                                   "users": "Read information about users.",
+                                                   "events": "Read information about events.",
+                                                   "signs": "Read information about signs.",
+                                                   "tags": "Read information about tags",
+                                                   "categories": "Read information about categories",
+                                                   "messages": "Read and write messages",
+                                                   "admin": "Admin's privilleges"},)
+
+
+# TODO: WebSocket handler error, need raise WebsocketException instead of HTTPException
 async def get_current_user(security_scopes: SecurityScopes,
                            session: AsyncSession = Depends(get_session),
                            token: str = Depends(oauth2_scheme)):
@@ -35,13 +42,13 @@ async def get_current_user(security_scopes: SecurityScopes,
         payload = jwt.decode(token, settings.JWT_SECRET_KEY,
                              algorithms=[settings.JWT_ALGORITHM])
         token_data = TokenData(**payload)
-        if datetime.datetime.fromtimestamp(token_data.exp) < datetime.datetime.now():
-            raise HTTPException(
+    except ExpiredSignatureError:
+        raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token expired",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-    except JWTError:
+    except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
