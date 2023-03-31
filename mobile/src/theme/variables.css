@@ -1,28 +1,23 @@
 /* Ionic Variables and Theming. For more info, please see:
 http://ionicframework.com/docs/theming/ */
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap');
-
 /** Ionic CSS Variables **/
 :root {
-  /** font **/
-  --ion-font-family: 'Montserrat', sans-serif;
-
   /** primary **/
-  --ion-color-primary: #234477;
-  --ion-color-primary-rgb: 35, 68, 119;
+  --ion-color-primary: #3880ff;
+  --ion-color-primary-rgb: 56, 128, 255;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-	--ion-color-primary-shade: #1f3c69;
-	--ion-color-primary-tint: #395785;
+  --ion-color-primary-shade: #3171e0;
+  --ion-color-primary-tint: #4c8dff;
 
   /** secondary **/
-  --ion-color-secondary: #002257;
-  --ion-color-secondary-rgb: 0, 34, 87;
+  --ion-color-secondary: #3dc2ff;
+  --ion-color-secondary-rgb: 61, 194, 255;
   --ion-color-secondary-contrast: #ffffff;
   --ion-color-secondary-contrast-rgb: 255, 255, 255;
-	--ion-color-secondary-shade: #001e4d;
-	--ion-color-secondary-tint: #1a3868;
+  --ion-color-secondary-shade: #36abe0;
+  --ion-color-secondary-tint: #50c8ff;
 
   /** tertiary **/
   --ion-color-tertiary: #5260ff;

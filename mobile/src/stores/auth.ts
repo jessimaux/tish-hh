@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
 import authApi from '@/api/auth'
-import { getCookie } from '@/tools/core'
+import { getCookie, setCookie, eraseCookie } from '@/tools/core'
+import type { UserBase } from './interfaces'
 
 interface AuthState {
   data: object | null
-  currentUser: object | null
+  currentUser: UserBase | null
   refreshTokenTimeout: ReturnType<typeof setTimeout> | number
   isLoading: boolean
   errors: object | null
@@ -38,14 +39,15 @@ export const useAuthStore = defineStore({
     },
 
     async login(user: object) {
+      this.currentUser = null
       this.errors = null
       this.isLoading = true
       await authApi
         .login(user)
         .then(async (response) => {
           localStorage.setItem('accessToken', response.data.access_token)
-          document.cookie = `refreshToken=${response.data.refresh_token}`
-          this.currentUser = {}
+          setCookie('refreshToken', response.data.refresh_token, 1000*60*60*24*7)
+          await this.getCurrentUser()
           this.isLoading = false
         })
         .catch((result) => {
@@ -59,7 +61,7 @@ export const useAuthStore = defineStore({
     async logout() {
       this.currentUser = null
       localStorage.removeItem('accessToken')
-      document.cookie = 'refreshToken='
+      eraseCookie('refreshToken')
       this.stopRefreshTokenTimer()
     },
 
@@ -71,7 +73,7 @@ export const useAuthStore = defineStore({
         .refresh(refreshToken)
         .then(async (response) => {
           localStorage.setItem('accessToken', response.data.access_token)
-          document.cookie = `refreshToken=${response.data.refresh_token}`
+          setCookie('refreshToken', response.data.refresh_token, 1000*60*60*24*7)
           this.isLoading = false
         })
         .catch((result) => {

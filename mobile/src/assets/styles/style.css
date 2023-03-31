@@ -5,7 +5,8 @@ p {
 	font-size: 100%;
 	font: inherit;
 	vertical-align: baseline;
-	color: #234477;
+	word-break: break-word;
+	color: #000;
 }
 
 .semi-bold {
@@ -33,21 +34,16 @@ p {
 }
 
 .profile .card {
-	padding: 16px;
 	display: flex;
 	flex-direction: column;
 }
 
 .profile .information-section {
 	display: flex;
-	flex-direction: column;
+	margin: 8px 0;
 }
 
-.information-section .general {
-	display: flex;
-}
-
-.information-section .general .profile-image {
+.information-section .profile-image {
 	flex: 30%;
 }
 
@@ -55,7 +51,7 @@ p {
 	border-radius: 50%;
 }
 
-.information-section .general .user {
+.information-section .user {
 	flex: 70%;
 	padding: 0 16px;
 	display: flex;
@@ -64,11 +60,7 @@ p {
 
 .links-wrapper {
 	display: flex;
-	flex-wrap: wrap;
-}
-
-.links-wrapper .link {
-	margin-right: 16px;
+	flex-direction: column;
 }
 
 .profile .options-section {

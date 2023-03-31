@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.jessimaux.tish',
+  appId: 'ionic.mobile',
   appName: 'mobile',
   webDir: 'dist',
   bundledWebRuntime: false

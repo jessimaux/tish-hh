@@ -1,18 +1,17 @@
 <template>
   <div class="card">
     <div class="information-section">
-      <div class="general">
-        <div class="profile-image">
-          <img :src="getProfileImage" class="thumbnail" />
-        </div>
-        <div class="user">
-          <div class="semi-bold">{{ user.name }}</div>
-          <div class="bio">{{ user.bio }}</div>
-          <div class="location">
-            {{ user.country }} {{ user.region }}
-            {{ user.city }}
+      <div class="profile-image">
+        <img :src="getProfileImage" class="thumbnail" />
+      </div>
+      <div class="user">
+        <p class="semi-bold">{{ user.name }}</p>
+        <p class="bio">{{ user.bio }}</p>
+        <p class="location">{{ user.country }} {{ user.region }} {{ user.city }}</p>
+        <div class="links-wrapper">
+          <div v-for="link in user.links" :key="link.id" class="link">
+            <a :href="link.link">{{ link.name }}</a>
           </div>
-          <tish-profile-link :links="user.links"></tish-profile-link>
         </div>
       </div>
     </div>
@@ -37,10 +36,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps } from 'vue'
+import { computed } from 'vue'
 import { IonButton } from '@ionic/vue'
 
-import TishProfileLink from './TishProfileLink.vue'
 import type { UserBase } from '@/stores/users'
 
 const props = defineProps<{

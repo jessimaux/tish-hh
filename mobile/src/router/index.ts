@@ -23,19 +23,19 @@ const routes = [
       },
       {
         path: 'feed',
-        component: () => import('@/views/FeedPage.vue')
+        component: () => import('@/views/tabs/FeedPage.vue')
       },
       {
         path: 'explore',
-        component: () => import('@/views/ExplorePage.vue')
+        component: () => import('@/views/tabs/ExplorePage.vue')
       },
       {
         path: 'search',
-        component: () => import('@/views/SearchPage.vue')
+        component: () => import('@/views/tabs/SearchPage.vue')
       },
       {
         path: 'me',
-        component: () => import('@/views/MePage.vue')
+        component: () => import('@/views/tabs/MePage.vue')
       },
     ]
   },

@@ -1,31 +1,12 @@
 import { defineStore } from 'pinia'
 import usersApi from '@/api/users'
+import type { UserBase } from '@/stores/interfaces'
 
 interface UserState {
   userData: UserBase | null
   eventsData: object | null
   isLoading: boolean
   errors: object | null
-}
-
-export interface ProfileLink {
-  id: number
-  name: string
-  link: string
-}
-
-export interface UserBase {
-  username: string
-  name: string
-  bio: string
-  image: string
-  country: string
-  region: string
-  city: string
-  links: ProfileLink[]
-  events_count: number
-  followers_count: number
-  following_count: number
 }
 
 export const useUsersStore = defineStore({
