@@ -33,8 +33,8 @@ app.mount("/media", StaticFiles(directory=settings.MEDIADIR), name="media")
 origins = [
     'http://localhost',
     'http://127.0.0.1',
-    'http://localhost:8100',
-    'http://127.0.0.1:8100',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
 ]
 
 app.add_middleware(

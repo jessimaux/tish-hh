@@ -1,9 +1,8 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
+    <ion-content>
       <div class="container">
         <div class="logo">
-          <img class="logo" src="@/assets/images/logo/512w/logo.png">
         </div>
 
         <div class="authorization">

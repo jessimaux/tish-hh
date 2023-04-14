@@ -1,10 +1,9 @@
-a {
-	color: #fff;
-	text-decoration: none;
+ion-content {
+  --keyboard-offset: 0 !important;
 }
 
-ion-content::part(background) {
-  background: var(--ion-color-secondary);
+a {
+	text-decoration: none;
 }
 
 .container {
@@ -45,15 +44,8 @@ img.logo {
   padding: 0 16px;
 }
 
-ion-item::part(native) {
-  background: var(--ion-color-secondary);
-}
-
 ion-input.base {
-  --background: var(--ion-color-primary);
-  --color: #fff;
-  --placeholder-color: #fff;
-  --placeholder-opacity: 1;
+  --background: #eee;
 
   border-radius: 16px;
   height: 48px;
@@ -61,14 +53,11 @@ ion-input.base {
 }
 
 ion-button {
-  --color: #fff;
-  --border-color: #fff;
   height: 48px;
-  margin: 16px 0;
-  padding: 0 16px;
 }
 
 .footer {
+  padding: 0 16px;
   display: flex;
   flex-direction: column;
   flex: 10%;

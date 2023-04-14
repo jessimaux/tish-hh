@@ -1,9 +1,8 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
+    <ion-content>
       <div class="container">
         <div class="logo">
-          <img class="logo" src="@/assets/images/logo/512w/logo.png">
         </div>
 
         <div class="authorization">
@@ -21,7 +20,7 @@
         </div>
 
         <div class="footer">
-          <ion-button type="submit" shape="round" fill="outline" @click="onSubmit">Login</ion-button>
+          <ion-button shape="round" fill="outline" @click="onSubmit">Login</ion-button>
           <div class="text-botoom">
             <p>Don't have an account? <router-link :to="{ name: 'register' }">Sign up</router-link></p>
           </div>

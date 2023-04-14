@@ -26,7 +26,7 @@ router = APIRouter()
 async def login_for_access_token(request: Request,
                                  form_data: OAuth2PasswordRequestForm = Depends(),
                                  session: AsyncSession = Depends(get_session)):
-    # # check for authorazation
+    # check for authorazation
     # if request.headers.get("Authorization"):
     #     raise HTTPException(status_code=403, detail="Already authenticated")
 
@@ -80,7 +80,7 @@ async def refresh_token(token: Token,
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post("/auth/registration/", tags=["auth"], response_model=UserRetrieve)
+@router.post("/auth/registration/", tags=["auth"])
 async def create_user(user: UserCreate,
                       request: Request,
                       background_tasks: BackgroundTasks,
@@ -97,8 +97,8 @@ async def create_user(user: UserCreate,
     await session.commit()
 
     # send activation email
-    background_tasks.add_task(send_verification_code, user_obj, request, session)
-    return user_obj
+    # background_tasks.add_task(send_verification_code, user_obj, request, session)
+    return JSONResponse({}, status_code=status.HTTP_201_CREATED)
 
 
 @router.post("/auth/send_retrieve_password/", tags=["auth"])
