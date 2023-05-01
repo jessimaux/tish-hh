@@ -2,7 +2,7 @@
   <div class="d-flex align-items-center justify-content-center h-100">
     <form class="d-flex flex-column">
       <div class="mb-5">
-        <img src="@/assets/img/logo.png" alt="" />
+        <img src="@/assets/img/logo/logo-250.png" alt="" />
       </div>
 
       <div class="mb-3">

@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+// TODO: split on many file
 const routes = [
+  // AUTH
   {
     path: '/',
     name: 'home',
@@ -20,6 +22,27 @@ const routes = [
     path: '/reset-password/',
     name: 'reset-password',
     component: () => import('@/views/ResetPassword.vue')
+  },
+
+  // PROFILE
+  {
+    path: '/profile/',
+    name: 'profile',
+    component: () => import('@/views/Profile.vue')
+  },
+
+  // FEED
+  {
+    path: '/feed/',
+    name: 'feed',
+    component: () => import('@/views/Feed.vue')
+  },
+
+  // BROWSE
+  {
+    path: '/browse/',
+    name: 'browse',
+    component: () => import('@/views/Browse.vue')
   },
 
   // otherwise redirect to home

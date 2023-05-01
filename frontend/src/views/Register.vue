@@ -5,7 +5,7 @@
       @submit.prevent="onSubmit">
       <div class="mb-5">
         <img
-          src="@/assets/img/logo.png"
+          src="@/assets/img/logo/logo-250.png"
           alt="" />
       </div>
 
