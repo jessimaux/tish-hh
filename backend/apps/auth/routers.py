@@ -23,24 +23,22 @@ router = APIRouter()
 
 
 @router.post("/auth/token/", tags=["auth"], response_model=TokenPare)
-async def login_for_access_token(request: Request,
-                                 form_data: OAuth2PasswordRequestForm = Depends(),
-                                 session: AsyncSession = Depends(get_session)):
+async def get_tokens(request: Request,
+                     form_data: OAuth2PasswordRequestForm = Depends(),
+                     session: AsyncSession = Depends(get_session)):
     # check for authorazation
     # if request.headers.get("Authorization"):
     #     raise HTTPException(status_code=403, detail="Already authenticated")
 
     user = await authenticate_user(session, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-        )
-
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Incorrect username or password",)
     access_token = create_access_token(user.username, scopes=USER_SCOPE)
     refresh_token = create_refresh_token(user.username, scopes=USER_SCOPE)
-
-    client_session = Session(user_id=user.id, client=request.client.host, refresh_token=refresh_token)
+    client_session = Session(user_id=user.id, 
+                             client=request.client.host,
+                             refresh_token=refresh_token)
     session.add(client_session)
     await session.commit()
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
@@ -48,33 +46,28 @@ async def login_for_access_token(request: Request,
 
 # TODO: delete session if jwt compromicated
 @router.post("/auth/refresh/", tags=["auth"], response_model=TokenPare)
-async def refresh_token(token: Token,
-                        session: AsyncSession = Depends(get_session)):
+async def refresh_tokens(token: Token,
+                         session: AsyncSession = Depends(get_session)):
     try:
         payload = jwt.decode(token.token, settings.JWT_REFRESH_SECRET_KEY, settings.JWT_ALGORITHM)
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not validate token",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Could not validate token")
     user_obj = (await session.execute(select(User)
                                       .where(User.username == payload["username"]))).scalar()
     if not user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Incorrect username or password",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Incorrect username or password")
+
     access_token = create_access_token(user_obj.username, scopes=payload["scopes"])
     refresh_token = create_refresh_token(user_obj.username, scopes=payload["scopes"])
-    # check for existing session
+
     client_session = (await session.execute(select(Session)
                                             .where(Session.user_id == user_obj.id,
                                                    Session.refresh_token == token.token))).scalar()
     if not client_session:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Session doesnt exist",
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Session doesnt exist")
     client_session.refresh_token = refresh_token
     await session.commit()
     return TokenPare(access_token=access_token, refresh_token=refresh_token)
@@ -95,8 +88,6 @@ async def create_user(user: UserCreate,
     user_obj = User(password=hashed_password, email=user.email, username=user.username)
     session.add(user_obj)
     await session.commit()
-
-    # send activation email
     # background_tasks.add_task(send_verification_code, user_obj, request, session)
     return JSONResponse({}, status_code=status.HTTP_201_CREATED)
 
@@ -129,7 +120,8 @@ async def retrieve_password(token: str,
     """Method to get access for retrieve password page"""
 
     try:
-        jwt_decoded = jwt.decode(token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
+        jwt_decoded = jwt.decode(
+            token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
         if datetime.datetime.fromtimestamp(jwt_decoded["exp"]) < datetime.datetime.now():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired")
     except JWTError:
@@ -155,7 +147,8 @@ async def retrieve_password(token: str,
                             pswrd_form: UserPasswordRetrieve,
                             session: AsyncSession = Depends(get_session)):
     try:
-        jwt_decoded = jwt.decode(token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
+        jwt_decoded = jwt.decode(
+            token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
         if datetime.datetime.fromtimestamp(jwt_decoded["exp"]) < datetime.datetime.now():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired")
     except JWTError:
@@ -182,7 +175,8 @@ async def retrieve_password(token: str,
 async def verify_email(token: str,
                        session: AsyncSession = Depends(get_session)):
     try:
-        jwt_decoded = jwt.decode(token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
+        jwt_decoded = jwt.decode(
+            token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
         if datetime.datetime.fromtimestamp(jwt_decoded["exp"]) < datetime.datetime.now():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired")
     except JWTError:

@@ -12,15 +12,15 @@ router = APIRouter()
 
 
 @router.post('/uploader/', tags=['core'])
-async def uploader(upload_file: UploadFile,
-                   current_user: UserRetrieve = Security(
-                       get_current_active_user, scopes=['me']),
-                   session: AsyncSession = Depends(get_session)):
+async def upload_file(upload_file: UploadFile,
+                      current_user: UserRetrieve = Security(
+                          get_current_active_user, scopes=['me']),
+                      session: AsyncSession = Depends(get_session)):
     """File uploader
-    
+
     Args:
         upload_file: file from fromdata request
-        
+
     Returns:
         Return (id, url) from Image instance
     """
