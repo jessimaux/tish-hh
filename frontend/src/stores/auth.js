@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+
 import authApi from '@/api/auth'
 import { getCookie, setCookie, eraseCookie } from '@/tools/core'
 
@@ -13,7 +14,6 @@ export const useAuthStore = defineStore('auth', {
     }
   },
   actions: {
-    // at in coockie, rt localstorage
     async getCurrentUser() {
       this.errors = null
       this.isLoading = true
@@ -68,6 +68,8 @@ export const useAuthStore = defineStore('auth', {
           this.isLoading = false
         })
         .catch((result) => {
+          localStorage.removeItem('refreshToken')
+          eraseCookie('accessToken')
           this.errors = result.response.data
           this.isLoading = false
           throw result.response.data

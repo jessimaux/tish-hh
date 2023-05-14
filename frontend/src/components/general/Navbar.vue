@@ -2,7 +2,7 @@
   <header id="header">
     <div class="container-fluid d-flex justify-content-between align-items-center">
       <router-link :to="{ name: 'feed' }" class="logo">
-        <img class="logo" src="@/assets/img/logo/logo-125.png" alt=""/>
+        <img class="logo" src="@/assets/img/logo/logo-125.png" alt="" />
       </router-link>
 
       <nav id="navbar" class="navbar">
@@ -29,8 +29,8 @@
         </ul>
       </nav>
 
-      <div class="profile d-flex align-items-center">
-        <div class="profile-name me-1">Username</div>
+      <div v-if="authStore.currentUser" class="profile d-flex align-items-center">
+        <div class="profile-name me-1">{{ authStore.currentUser.username }}</div>
         <router-link :to="{ name: 'profile' }">
           <img src="@/assets/img/user-default.png" alt="" width="40" />
         </router-link>
@@ -38,3 +38,9 @@
     </div>
   </header>
 </template>
+
+<script setup>
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+</script>

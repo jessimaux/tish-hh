@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { getCookie } from '@/tools/core'
 
 // TODO: split on many file
 const routes = [
@@ -6,7 +7,10 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/views/Home.vue')
+    component: () => import('@/views/Home.vue'),
+    meta: {
+      requiresAuth: true,
+    }
   },
   {
     path: '/login/',
@@ -28,21 +32,30 @@ const routes = [
   {
     path: '/profile/',
     name: 'profile',
-    component: () => import('@/views/Profile.vue')
+    component: () => import('@/views/Profile.vue'),
+    meta: {
+      requiresAuth: true,
+    }
   },
 
   // FEED
   {
     path: '/feed/',
     name: 'feed',
-    component: () => import('@/views/Feed.vue')
+    component: () => import('@/views/Feed.vue'),
+    meta: {
+      requiresAuth: true,
+    }
   },
 
   // BROWSE
   {
     path: '/browse/',
     name: 'browse',
-    component: () => import('@/views/Browse.vue')
+    component: () => import('@/views/Browse.vue'),
+    meta: {
+      requiresAuth: true,
+    }
   },
 
   // otherwise redirect to home
@@ -55,7 +68,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const userIsAuthenticated = Boolean(localStorage.getItem('accessToken'))
+  const userIsAuthenticated = Boolean(getCookie('accessToken'))
 
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (userIsAuthenticated) {
