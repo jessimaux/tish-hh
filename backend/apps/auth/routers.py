@@ -26,9 +26,9 @@ router = APIRouter()
 async def get_tokens(request: Request,
                      form_data: OAuth2PasswordRequestForm = Depends(),
                      session: AsyncSession = Depends(get_session)):
-    # check for authorazation
-    # if request.headers.get("Authorization"):
-    #     raise HTTPException(status_code=403, detail="Already authenticated")
+    if request.headers.get("Authorization"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="Already authenticated")
 
     user = await authenticate_user(session, form_data.username, form_data.password)
     if not user:
@@ -36,7 +36,7 @@ async def get_tokens(request: Request,
                             detail="Incorrect username or password",)
     access_token = create_access_token(user.username, scopes=USER_SCOPE)
     refresh_token = create_refresh_token(user.username, scopes=USER_SCOPE)
-    client_session = Session(user_id=user.id, 
+    client_session = Session(user_id=user.id,
                              client=request.client.host,
                              refresh_token=refresh_token)
     session.add(client_session)
@@ -45,6 +45,7 @@ async def get_tokens(request: Request,
 
 
 # TODO: delete session if jwt compromicated
+#       check session work
 @router.post("/auth/refresh/", tags=["auth"], response_model=TokenPare)
 async def refresh_tokens(token: Token,
                          session: AsyncSession = Depends(get_session)):
@@ -79,16 +80,19 @@ async def create_user(user: UserCreate,
                       background_tasks: BackgroundTasks,
                       session: AsyncSession = Depends(get_session)):
     if request.headers.get("Authorization"):
-        raise HTTPException(status_code=403, detail="Already authenticated")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="Already authenticated")
     if await check_email(user.email, session):
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail="Email already registered")
     if await check_username(user.username, session):
-        raise HTTPException(status_code=400, detail="Username already registered")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                            detail="Username already registered")
     hashed_password = get_hashed_password(user.password)
     user_obj = User(password=hashed_password, email=user.email, username=user.username)
     session.add(user_obj)
     await session.commit()
-    # background_tasks.add_task(send_verification_code, user_obj, request, session)
+    background_tasks.add_task(send_verification_code, user_obj, request, session)
     return JSONResponse({}, status_code=status.HTTP_201_CREATED)
 
 
@@ -103,15 +107,11 @@ async def send_retrieve_password(password_retrieve_form: PasswordRetrieveBase,
         user_obj = (await session.execute(select(User)
                                           .where(User.username == password_retrieve_form.login))).scalar()
         if not user_obj:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User with this credentials doesnt exists",
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="User with this credentials doesnt exists")
     background_tasks.add_task(send_retrieve_password_link, user_obj, request)
-    return JSONResponse(
-        {"message": "Email to retrieve password sent"},
-        status_code=status.HTTP_200_OK,
-    )
+    return JSONResponse({"message": "Email to retrieve password sent"},
+                        status_code=status.HTTP_200_OK)
 
 
 @router.get("/auth/retrieve_password/{token}/", tags=["auth"])
@@ -123,23 +123,18 @@ async def retrieve_password(token: str,
         jwt_decoded = jwt.decode(
             token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
         if datetime.datetime.fromtimestamp(jwt_decoded["exp"]) < datetime.datetime.now():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Token expired")
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not validate token",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Could not validate token")
     user_obj = (await session.execute(select(User)
                                       .where(User.username == jwt_decoded["username"]))).scalar()
     if not user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid code or user doesn't exist",
-        )
-    return JSONResponse(
-        {"message": "Verifed to change password"},
-        status_code=status.HTTP_200_OK,
-    )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Invalid code or user doesn't exist")
+    return JSONResponse({"message": "Verifed to change password"},
+                        status_code=status.HTTP_200_OK)
 
 
 @router.post("/auth/retrieve_password/{token}/", tags=["auth"])
@@ -150,25 +145,20 @@ async def retrieve_password(token: str,
         jwt_decoded = jwt.decode(
             token, settings.JWT_VERIFICATION_SECRET_KEY, settings.JWT_ALGORITHM)
         if datetime.datetime.fromtimestamp(jwt_decoded["exp"]) < datetime.datetime.now():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Token expired")
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not validate token",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Could not validate token")
     user_obj = (await session.execute(select(User)
                                       .where(User.username == jwt_decoded["username"]))).scalar()
     if not user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid code or user doesn't exist",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Invalid code or user doesn't exist")
     user_obj.password = get_hashed_password(pswrd_form.password)
     await session.commit()
-    return JSONResponse(
-        {"message": "Password changed successfully"},
-        status_code=status.HTTP_200_OK,
-    )
+    return JSONResponse({"message": "Password changed successfully"},
+                        status_code=status.HTTP_200_OK)
 
 
 @router.get("/auth/verifyemail/{token}/", tags=["auth"])
@@ -180,25 +170,17 @@ async def verify_email(token: str,
         if datetime.datetime.fromtimestamp(jwt_decoded["exp"]) < datetime.datetime.now():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token expired")
     except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not validate token",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Could not validate token")
     user_obj = (await session.execute(select(User)
                                       .where(User.username == jwt_decoded["username"]))).scalar()
     if not user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid code or user doesn't exist",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Invalid code or user doesn't exist")
     if user_obj.is_verifed:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Email can only be verified once",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Email can only be verified once")
     user_obj.is_verifed = True
     await session.commit()
-    return JSONResponse(
-        {"message": "Account verified successfully"},
-        status_code=status.HTTP_200_OK,
-    )
+    return JSONResponse({"message": "Account verified successfully"},
+                        status_code=status.HTTP_200_OK)
