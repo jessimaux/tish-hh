@@ -30,10 +30,28 @@
       </nav>
 
       <div v-if="authStore.currentUser" class="profile d-flex align-items-center">
-        <div class="profile-name me-1">{{ authStore.currentUser.username }}</div>
-        <router-link :to="{ name: 'profile' }">
+        <a
+          class="dropdown-toggle"
+          href="#"
+          role="button"
+          id="dropdownMenuLink"
+          data-bs-toggle="dropdown"
+          aria-expanded="false">
+          {{ authStore.currentUser.username }}
           <img src="@/assets/img/user-default.png" alt="" width="40" />
-        </router-link>
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+          <li>
+            <router-link :to="{ name: 'profile' }" class="dropdown-item">Profile</router-link>
+          </li>
+          <li>
+            <router-link :to="{ name: 'profile-edit' }" class="dropdown-item"
+              >Edit profile</router-link
+            >
+          </li>
+          <li><a class="dropdown-item" href="#">Settings</a></li>
+          <li><a class="dropdown-item" href="#">Logout</a></li>
+        </ul>
       </div>
     </div>
   </header>

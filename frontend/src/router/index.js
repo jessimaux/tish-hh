@@ -37,6 +37,14 @@ const routes = [
       requiresAuth: true,
     }
   },
+  {
+    path: '/profile/edit/',
+    name: 'profile-edit',
+    component: () => import('@/views/ProfileEdit.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
 
   // FEED
   {

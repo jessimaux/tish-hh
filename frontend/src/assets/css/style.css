@@ -7,30 +7,29 @@
 }
 
 a {
-  color: #f57a19 !important;
+  color: #f57a19;
   text-decoration: none;
 }
 
 a:hover {
-  color: #ff7f1d;
-  text-decoration: underline;
+  color: #000;
+  text-decoration: none;
 }
 
 /* Bootstrap */
 
-.btn-tish {
-  background-color: rgb(245, 122, 25);
-  color: #fff;
-}
-
-.btn-tish:hover {
-  background-color: #ff7f1d;
-  color: #fff;
-}
-
 .form-control:focus {
   border-color: #ff7f1d;
   box-shadow: 0 0 0 0.25rem rgba(245, 122, 25,.25);;
+}
+
+.nav-link {
+  --bs-nav-link-hover-color: black;
+  --bs-nav-link-color: rgb(245, 122, 25);
+}
+
+.nav-link.active {
+  --bs-nav-pills-link-active-bg: rgb(245, 122, 25);
 }
 
 /* Base */
@@ -70,4 +69,14 @@ main {
 .profile-wrapper {
   width: 800px;
   margin: 0 auto;
+}
+
+.btn-tish {
+  background-color: rgb(245, 122, 25);
+  color: #fff;
+}
+
+.btn-tish:hover {
+  background-color: #ff7f1d;
+  color: #fff;
 }
