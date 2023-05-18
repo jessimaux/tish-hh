@@ -21,18 +21,17 @@ router = APIRouter()
 @router.get("/categories/", tags=['categories'], response_model=list[CategoryRetrieve])
 async def get_categories(current_user: UserRetrieve = Security(get_current_active_user, scopes=['categories']),
                          session: AsyncSession = Depends(get_session)):
-    categories = await session.execute(select(Category.id, Category.name, func.count(Event.id))
+    categories = await session.execute(select(Category.id, Category.name, func.count(Event.id).label('events_count'))
                                        .join(Event, Category.id == Event.category_id, isouter=True)
                                        .group_by(Category.id)
                                        .order_by(func.count(Event.id).desc()))
-    return [CategoryRetrieve(id=category[0], name=category[1], events_count=category[2]) for category in categories]
+    return [dict(category) for category in categories.mappings()]
 
 
 @router.get("/categories/{category_name}/", tags=['categories'], response_model=list[EventBase])
 async def get_events_from_category(category_name: str,
                                    tags: list[str] | None = Query(default=None),
-                                   current_user: UserRetrieve = Security(
-                                       get_current_active_user, scopes=['categories']),
+                                   current_user: UserRetrieve = Security(get_current_active_user, scopes=['categories']),
                                    session: AsyncSession = Depends(get_session)):
     category = await crud.get_category_or_404(session, category_name)
     statement = (select(Event)
