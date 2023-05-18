@@ -7,9 +7,10 @@ from pydantic import EmailStr
 
 from .models import *
 from .schemas import *
-import crud
+from database import update_foreign_key
 
 
+# TODO: rewrite as general method in database.py
 async def get_user_or_404(username: str, session: AsyncSession):
     user_obj = (await session.execute(select(User)
                                       .where(User.username == username))).scalar()
@@ -20,6 +21,7 @@ async def get_user_or_404(username: str, session: AsyncSession):
                             detail='User doesnt exist')
 
 
+# TODO: rewrite w exception, DRY
 async def check_username(username: str, session: AsyncSession):
     check = (await session.execute(select(User)
                                    .where(User.username == username))).scalar()
@@ -57,15 +59,15 @@ async def update_user(user: UserUpdate, current_user: User, session: AsyncSessio
             # check on username exists when change username
             if attr == 'username' and value != current_user.username:
                 if not check_username(user.username):
-                    raise HTTPException(
-                        status_code=400, detail="Username already in use")
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                                        detail="Username already in use")
             # check on email exists when change email
             elif attr == 'email' and value != current_user.email:
                 if not check_email(user.email):
-                    raise HTTPException(
-                        status_code=400, detail="Email already in use")
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                                        detail="Email already in use")
             setattr(current_user, attr, value)
 
-    await crud.update_fg(current_user.links, Link, user.links, session)
+    await update_foreign_key(current_user.links, Link, user.links, session)
     await session.commit()
     return current_user

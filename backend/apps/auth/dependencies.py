@@ -20,7 +20,7 @@ class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
 
 
 oauth2_scheme = CustomOAuth2PasswordBearer(tokenUrl="/auth/token/",
-                                           scopes={"me": "Read information about the current user.",
+                                           scopes={"profile": "Read/edit information about the current user.",
                                                    "users": "Read information about users.",
                                                    "events": "Read information about events.",
                                                    "signs": "Read information about signs.",

@@ -26,10 +26,6 @@ router = APIRouter()
 async def get_tokens(request: Request,
                      form_data: OAuth2PasswordRequestForm = Depends(),
                      session: AsyncSession = Depends(get_session)):
-    if request.headers.get("Authorization"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
-                            detail="Already authenticated")
-
     user = await authenticate_user(session, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,

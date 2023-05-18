@@ -67,9 +67,7 @@ class Link(Base):
 class Subscription(Base):
     __tablename__ = "users__subscriptions"
 
-    subscriber_id = Column(Integer, ForeignKey(
-        "users.id", ondelete='CASCADE'), primary_key=True)
-    publisher_id = Column(Integer, ForeignKey(
-        "users.id", ondelete='CASCADE'), primary_key=True)
+    subscriber_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'), primary_key=True)
+    publisher_id = Column(Integer, ForeignKey("users.id", ondelete='CASCADE'), primary_key=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())

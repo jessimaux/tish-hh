@@ -5,14 +5,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select, delete
 
-import crud
 import settings
+from database import update_foreign_key
 from apps.core.models import Image
 from apps.users.models import User
 from .models import *
 from .schemas import *
 
 
+# TODO: rewrite as general
 async def get_category_or_404(session: AsyncSession, category_name: str):
     category = (await session.execute(select(Category)
                                       .where(Category.name == category_name))).scalar()
@@ -35,6 +36,9 @@ async def get_event(id: int, session: AsyncSession):
                                            selectinload(Event.images)))).scalar()
 
 
+# TODO: real need to handle duplicate? close api / handle case on frontend
+#       it follows too many db requests
+#       get tags with id can help
 async def event_tags_update(event: EventCreate, event_obj: Event, session: AsyncSession):
     # remove duplicate and add tag with exists checkout
     tags_map = set([tag.name for tag in event.tags])
@@ -107,10 +111,10 @@ async def edit_event(event: EventCreate, event_obj: Event, session: AsyncSession
     for attr, value in event:
         if attr not in ['tags', 'dates', 'characteristics', 'links', 'contacts', 'qas', 'images']:
             setattr(event_obj, attr, value)
-    await crud.update_fg(event_obj.characteristics, Characteristic, event.characteristics, session)
-    await crud.update_fg(event_obj.links, EventLink, event.links, session)
-    await crud.update_fg(event_obj.contacts, Contact, event.contacts, session)
-    await crud.update_fg(event_obj.qas, QA, event.qas, session)
+    await update_foreign_key(event_obj.characteristics, Characteristic, event.characteristics, session)
+    await update_foreign_key(event_obj.links, EventLink, event.links, session)
+    await update_foreign_key(event_obj.contacts, Contact, event.contacts, session)
+    await update_foreign_key(event_obj.qas, QA, event.qas, session)
     await event_tags_update(event, event_obj, session)
     
     # Delete image from server/db if that doesnt exist in request
