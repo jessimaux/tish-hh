@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from dependencies import get_session
+from database import get_session
 from apps.events.models import *
 from apps.events.schemas import *
 from apps.users.schemas import *
@@ -15,9 +15,10 @@ router = APIRouter()
 
 """ Categories """
 
+
 @router.post("/categories/", tags=['categories'], response_model=CategoryBase)
-async def create_category(category: CategoryBase, 
-                          current_user: UserRetrieve = Security(get_current_active_user, 
+async def create_category(category: CategoryBase,
+                          current_user: UserRetrieve = Security(get_current_active_user,
                                                                 scopes=['categories', 'admin']),
                           session: AsyncSession = Depends(get_session)):
     check_name = (await session.execute(select(Category)
@@ -29,9 +30,10 @@ async def create_category(category: CategoryBase,
     await session.commit()
     return category_obj
 
+
 @router.get("/categories/{name}/", tags=['categories'], response_model=CategoryBase)
-async def get_category(name: str, 
-                       current_user: UserRetrieve = Security(get_current_active_user, 
+async def get_category(name: str,
+                       current_user: UserRetrieve = Security(get_current_active_user,
                                                              scopes=['categories', 'admin']),
                        session: AsyncSession = Depends(get_session)):
     category_res = await session.execute(select(Category).where(Category.name == name))
@@ -40,10 +42,11 @@ async def get_category(name: str,
         raise HTTPException(status_code=404, detail="Category doesnt exist")
     return category_obj
 
+
 @router.put("/categories/{name}/", tags=['categories'], response_model=CategoryBase)
-async def edit_category(name: str, 
-                        category: CategoryBase, 
-                        current_user: UserRetrieve = Security(get_current_active_user, 
+async def edit_category(name: str,
+                        category: CategoryBase,
+                        current_user: UserRetrieve = Security(get_current_active_user,
                                                               scopes=['categories', 'admin']),
                         session: AsyncSession = Depends(get_session)):
     category_obj = (await session.execute(select(Category)
@@ -60,9 +63,10 @@ async def edit_category(name: str,
     await session.commit()
     return category_obj
 
+
 @router.delete("/categories/{name}/", tags=['categories'])
-async def delete_category(name: str, 
-                          current_user: UserRetrieve = Security(get_current_active_user, 
+async def delete_category(name: str,
+                          current_user: UserRetrieve = Security(get_current_active_user,
                                                                 scopes=['categories', 'admin']),
                           session: AsyncSession = Depends(get_session)):
     await session.execute(delete(Category).where(Category.name == name))
@@ -74,7 +78,7 @@ async def delete_category(name: str,
 
 
 @router.post("/tags/", tags=['tags'], response_model=TagBase)
-async def create_tag(tag: TagBase, 
+async def create_tag(tag: TagBase,
                      current_user: UserRetrieve = Security(get_current_active_user, scopes=['tags', 'admin']),
                      session: AsyncSession = Depends(get_session)):
     check_name = (await session.execute(select(Tag).where(Tag.name == tag.name))).scalar()
@@ -87,8 +91,8 @@ async def create_tag(tag: TagBase,
 
 
 @router.put("/tags/{name}/", tags=['tags'], response_model=TagBase)
-async def edit_tag(name: str, 
-                   tag: TagBase, 
+async def edit_tag(name: str,
+                   tag: TagBase,
                    current_user: UserRetrieve = Security(get_current_active_user, scopes=['tags', 'admin']),
                    session: AsyncSession = Depends(get_session)):
     tag_obj_res = await session.execute(select(Tag).where(Tag.name == name))
@@ -99,8 +103,9 @@ async def edit_tag(name: str,
     await session.commit()
     return tag_obj
 
+
 @router.delete("/tags/{name}/", tags=['tags'])
-async def delete_tag(name: str, 
+async def delete_tag(name: str,
                      current_user: UserRetrieve = Security(get_current_active_user, scopes=['tags', 'admin']),
                      session: AsyncSession = Depends(get_session)):
     await session.execute(delete(Tag).where(Tag.name == name))

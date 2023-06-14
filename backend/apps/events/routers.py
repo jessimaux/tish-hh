@@ -1,6 +1,6 @@
 from apps.auth.dependencies import get_current_active_user
 from apps.users.schemas import UserRetrieve
-from dependencies import get_session
+from database import get_session
 from fastapi import (APIRouter, Depends, HTTPException, Query, Security,
                      UploadFile, status)
 from fastapi.responses import JSONResponse
@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from . import crud
 from .models import *
 from .schemas import *
+from .services import *
 
 router = APIRouter()
 
@@ -19,75 +20,45 @@ router = APIRouter()
 
 
 @router.get("/categories/", tags=['categories'], response_model=list[CategoryRetrieve])
-async def get_categories(current_user: UserRetrieve = Security(get_current_active_user, scopes=['categories']),
+async def get_categories(current_user: UserRetrieve = Security(get_current_active_user, scopes=['events']),
                          session: AsyncSession = Depends(get_session)):
-    categories = await session.execute(select(Category.id, Category.name, func.count(Event.id).label('events_count'))
-                                       .join(Event, Category.id == Event.category_id, isouter=True)
-                                       .group_by(Category.id)
-                                       .order_by(func.count(Event.id).desc()))
-    return [dict(category) for category in categories.mappings()]
-
-
-@router.get("/categories/{category_name}/", tags=['categories'], response_model=list[EventBase])
-async def get_events_from_category(category_name: str,
-                                   tags: list[str] | None = Query(default=None),
-                                   current_user: UserRetrieve = Security(get_current_active_user, scopes=['categories']),
-                                   session: AsyncSession = Depends(get_session)):
-    category = await crud.get_category_or_404(session, category_name)
-    statement = (select(Event)
-                 .join(Event.tags, isouter=True)
-                 .where(Event.category_id == category.id))
-    if tags:
-        filters = None
-        for tag in tags:
-            if filters is not None:
-                filters |= Tag.name.ilike(tag)
-            else:
-                filters = Tag.name.ilike(tag)
-        statement = statement.where(filters)
-    events = (await session.execute(statement.distinct(Event.id))).scalars().all()
-    return events
+    return await CategoryService(session).get_categories()
 
 
 """ Tags """
 
 
-@router.get("/tags/", tags=['tags'])
+@router.get("/tags/", tags=['tags'], response_model=list[TagBase])
 async def get_tags(current_user: UserRetrieve = Security(get_current_active_user, scopes=['tags']),
                    session: AsyncSession = Depends(get_session)):
-    tags_res = await session.execute(select(Tag))
-    tags_objs = tags_res.scalars().all()
-    return tags_objs
+    return await TagService(session).get_all()
 
 
 """ Events """
 
 
 @router.get("/events/", tags=['events'], response_model=list[EventBase])
-async def get_events(tags: list[str] | None = Query(default=None),
-                     current_user: UserRetrieve = Security(
-                         get_current_active_user, scopes=['events']),
-                     session: AsyncSession = Depends(get_session)):
-    statement = (select(Event).join(Event.tags, isouter=True))
-    if tags:
-        filters = None
-        for tag in tags:
-            if filters is not None:
-                filters |= Tag.name.ilike(tag)
-            else:
-                filters = Tag.name.ilike(tag)
-        statement = statement.where(filters)
-    events = (await session.execute(statement.distinct(Event.id))).scalars().all()
-    return events
+async def get_events(current_user: UserRetrieve = Security(
+        get_current_active_user, scopes=['events']),
+        session: AsyncSession = Depends(get_session)):
+    return await EventService(session).get_all()
 
 
-@router.get("/events/{id}/", tags=['events'], response_model=EventRetrieve)
-async def get_event(id: int,
+# TODO: add filter by tag
+@router.get("/categories/{category_name}/", tags=['categories'], response_model=list[EventBase])
+async def get_events_from_category(category_name: str,
+                                   current_user: UserRetrieve = Security(
+                                       get_current_active_user, scopes=['categories']),
+                                   session: AsyncSession = Depends(get_session)):
+    return await EventService(session).get_from_category(category_name)
+
+
+@router.get("/events/{event_id}/", tags=['events'], response_model=EventRetrieve)
+async def get_event(event_id: int,
                     current_user: UserRetrieve = Security(
                         get_current_active_user, scopes=['events']),
                     session: AsyncSession = Depends(get_session)):
-    event_obj = await crud.get_event(id, session)
-    return event_obj
+    return await EventService(session).get(event_id)
 
 
 @router.post("/events/", tags=['events'])
@@ -95,8 +66,7 @@ async def create_event(event: EventCreate,
                        current_user: UserRetrieve = Security(
                            get_current_active_user, scopes=['events']),
                        session: AsyncSession = Depends(get_session)):
-    event_obj = await crud.create_event(event, current_user, session)
-    return JSONResponse({}, status_code=status.HTTP_201_CREATED)
+    return await EventService(session).create(event, current_user.id)
 
 
 @router.put("/events/{id}/", tags=['events'])

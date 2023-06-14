@@ -6,8 +6,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select, delete
 
 import settings
-from database import update_foreign_key
-from apps.core.models import Image
+from apps.uploader.models import Image
 from apps.users.models import User
 from .models import *
 from .schemas import *
@@ -61,7 +60,7 @@ async def event_tags_update(event: EventCreate, event_obj: Event, session: Async
 async def create_event(event: EventCreate, user: User, session: AsyncSession):
     event_obj = Event()
     for attr, value in event:
-        if attr in ['tags', 'characteristics', 'links', 'contacts', 'qas', 'images']:
+        if attr in ['tags', 'characteristics', 'qas', 'images']:
             continue
         setattr(event_obj, attr, value)
 
@@ -111,10 +110,10 @@ async def edit_event(event: EventCreate, event_obj: Event, session: AsyncSession
     for attr, value in event:
         if attr not in ['tags', 'dates', 'characteristics', 'links', 'contacts', 'qas', 'images']:
             setattr(event_obj, attr, value)
-    await update_foreign_key(event_obj.characteristics, Characteristic, event.characteristics, session)
-    await update_foreign_key(event_obj.links, EventLink, event.links, session)
-    await update_foreign_key(event_obj.contacts, Contact, event.contacts, session)
-    await update_foreign_key(event_obj.qas, QA, event.qas, session)
+    # await update_foreign_key(event_obj.characteristics, Characteristic, event.characteristics, session)
+    # await update_foreign_key(event_obj.links, EventLink, event.links, session)
+    # await update_foreign_key(event_obj.contacts, Contact, event.contacts, session)
+    # await update_foreign_key(event_obj.qas, QA, event.qas, session)
     await event_tags_update(event, event_obj, session)
     
     # Delete image from server/db if that doesnt exist in request

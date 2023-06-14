@@ -1,15 +1,12 @@
-import datetime
-
 from jose import ExpiredSignatureError, JWTError, jwt
 from fastapi import Depends, HTTPException, WebSocketException, status, Security, Request, WebSocket
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from dependencies import get_session
+from database import get_session
 from apps.users.models import User
 from apps.users.schemas import UserRetrieve
+from apps.users.repository import UserRepository
 from .schemas import *
 import settings
 
@@ -27,31 +24,29 @@ oauth2_scheme = CustomOAuth2PasswordBearer(tokenUrl="/auth/token/",
                                                    "tags": "Read information about tags",
                                                    "categories": "Read information about categories",
                                                    "messages": "Read and write messages",
-                                                   "admin": "Admin's privilleges"},)
+                                                   "admin": "Admin's privilleges"})
 
 
 # TODO: WebSocket handler error, need raise WebsocketException instead of HTTPException
 async def get_current_user(security_scopes: SecurityScopes,
                            session: AsyncSession = Depends(get_session),
-                           token: str = Depends(oauth2_scheme)):
+                           token: str = Depends(oauth2_scheme)) -> User:
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:
         authenticate_value = "Bearer"
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY,
-                             algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         token_data = TokenData(**payload)
     except ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Token expired",
                             headers={"WWW-Authenticate": "Bearer"})
-    except JWTError as e:
+    except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Could not validate credentials",
                             headers={"WWW-Authenticate": "Bearer"})
-    user = (await session.execute(select(User)
-                                  .where(User.username == token_data.username))).scalar()
+    user = await UserRepository(session).get_by_username(token_data.username)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Could not validate credentials",
@@ -64,7 +59,7 @@ async def get_current_user(security_scopes: SecurityScopes,
     return user
 
 
-async def get_current_active_user(current_user: UserRetrieve = Security(get_current_user, scopes=["me"])):
+async def get_current_active_user(current_user: UserRetrieve = Security(get_current_user, scopes=["profile"])) -> User:
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user

@@ -42,11 +42,12 @@ class User(Base):
                              secondaryjoin="User.id==Subscription.subscriber_id",
                              lazy="dynamic")
 
-    notifications = relationship('Notification',
-                                 secondary='notification_sender',
-                                 primaryjoin="User.id==NotificationSender.notifier_id",
-                                 secondaryjoin="NotificationSender.notification_id==Notification.id",
-                                 lazy='dynamic')
+    # TODO: under development
+    # notifications = relationship('Notification',
+    #                              secondary='notification_sender',
+    #                              primaryjoin="User.id==NotificationSender.notifier_id",
+    #                              secondaryjoin="NotificationSender.notification_id==Notification.id",
+    #                              lazy='dynamic')
 
     is_verifed = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)

@@ -4,11 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import settings
 
-from apps.core.routers import router as core_router
-from apps.auth.routers import router as auth_router
+from apps.uploader.router import uploader_router
+from apps.auth.router import auth_router
 from apps.events.routers import router as events_router
 from apps.admin.routers import router as admin_router
-from apps.users.routers import router as users_router
+from apps.users.router import user_router
 from apps.feed.routers import router as feed_router
 from apps.search.routers import router as search_router
 from apps.messages.routers import router as messages_router
@@ -17,9 +17,9 @@ from apps.messages.routers import router as messages_router
 app = FastAPI()
 
 # routers
-app.include_router(core_router)
+app.include_router(uploader_router)
 app.include_router(auth_router)
-app.include_router(users_router)
+app.include_router(user_router)
 app.include_router(events_router)
 app.include_router(feed_router)
 app.include_router(search_router)

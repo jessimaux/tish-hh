@@ -37,35 +37,25 @@ class Event(Base):
     
         
 class Characteristic(Base):
+    __tablename__ = "characteristics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255))
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    
+class CharacteristicEvent(Base):
     __tablename__ = "events__characteristics"
     
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255))
     description = Column(String(255))
-    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
     
-    event = relationship("Event", backref="characteristics")
+    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'), primary_key=True)
+    characteristic_id = Column(Integer, ForeignKey("characteristics.id", ondelete='CASCADE'), primary_key=True)
     
-class EventLink(Base):
-    __tablename__ = "events__links"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255))
-    link = Column(String)
-    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
-    
-    event = relationship("Event", backref="links")
-    
-class Contact(Base):
-    __tablename__ = "events__contacts"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255))
-    description = Column(String(255))
-    contact = Column(String(255))
-    event_id = Column(Integer, ForeignKey("events.id", ondelete='CASCADE'))
-    
-    event = relationship("Event", backref="contacts")
+    event = relationship("Event", back_populates="characteristics_description")
+    characteristic = relationship("Characteristic", back_populates="characteristics_description")
+
     
 class QA(Base):
     __tablename__ = "events__qa"
@@ -83,6 +73,8 @@ class Category(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, index=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class Tag(Base):
@@ -92,6 +84,8 @@ class Tag(Base):
     name = Column(String(255), unique=True)
     
     events = relationship("Event", secondary="events__tags", back_populates="tags")
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class TagEvent(Base):

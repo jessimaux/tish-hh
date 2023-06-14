@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 
-from apps.core.schemas import ImageBase
+from apps.uploader.schemas import ImageBase
     
 
 class LinkBase(BaseModel):
@@ -13,6 +13,7 @@ class LinkBase(BaseModel):
         
         
 class UserBase(BaseModel):
+    id: int | None
     email: EmailStr
     username: str
     
@@ -27,6 +28,14 @@ class UserCreate(UserBase):
 class UserPasswordChange(BaseModel):
     old_password: str
     new_password: str
+    
+    
+class PasswordRetrieveBase(BaseModel):
+    login: str
+    
+
+class UserPasswordRetrieve(BaseModel):
+    new_password: str
         
 
 class UserUpdate(UserBase):
@@ -38,15 +47,14 @@ class UserUpdate(UserBase):
     age: int | None
     gender: bool | None
     bio: str | None
-    links: list[LinkBase] | list
     
     
 class UserRetrieve(UserUpdate):
-    id: int
     image: ImageBase | None
+    links: list[LinkBase] | None
     
     
-class UserGet(UserRetrieve):
+class Profile(UserRetrieve):
     events_count: int
     followers_count: int
     following_count: int

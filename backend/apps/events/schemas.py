@@ -14,37 +14,18 @@ class CategoryRetrieve(CategoryBase):
     events_count: int
         
 
-class ImageBase(BaseModel):
-    id: int | None
-    image: str
-    
-    class Config:
-        orm_mode = True
-        
-        
 class CharacteristicBase(BaseModel):
     id: int | None
     name: str
-    description: str
     
     class Config:
         orm_mode = True
         
-
-class LinkBase(BaseModel):
+                
+class CharacteristicEventBase(BaseModel):
     id: int | None
-    name: str
-    link: str
-    
-    class Config:
-        orm_mode = True
-        
-
-class ContactBase(BaseModel):
-    id: int | None
-    name: str
     description: str
-    contact: str
+    characteristic: CharacteristicBase
     
     class Config:
         orm_mode = True
@@ -86,9 +67,7 @@ class EventBase(BaseModel):
 class EventCreate(EventBase):
     category_id: int
     tags: list[TagBase]
-    links: list[LinkBase]
-    contacts: list[ContactBase]
-    characteristics: list[CharacteristicBase]
+    characteristics_description: list[CharacteristicEventBase]
     qas: list[QABase]
     images: list[int] | None = Field(..., max_items=10)
 
