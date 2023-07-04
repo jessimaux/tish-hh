@@ -75,13 +75,7 @@ async def edit_event(id: int,
                      current_user: UserRetrieve = Security(
                          get_current_active_user, scopes=['events']),
                      session: AsyncSession = Depends(get_session)):
-    event_obj = await crud.get_event(id, session)
-    # check on current user is owner
-    if event_obj.created_by != current_user.id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Not enough permissions")
-    event_obj = await crud.edit_event(event, event_obj, session)
-    return JSONResponse({}, status_code=status.HTTP_200_OK)
+    return await EventService(session).update(event, current_user.id)
 
 
 @router.delete('/events/{id}/', tags=['events'])
@@ -89,156 +83,113 @@ async def delete_event(id: int,
                        current_user: UserRetrieve = Security(
                            get_current_active_user, scopes=['events']),
                        session: AsyncSession = Depends(get_session)):
-    event_obj = (await session.execute(select(Event).where(Event.id == id))).scalar()
-    if not event_obj:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='Event doesnt exist')
-    await session.delete(event_obj)
-    await session.commit()
-    return JSONResponse({"message": "Event deleted successfully"}, status_code=status.HTTP_202_ACCEPTED)
-
+    if await EventService(session).delete(id, current_user.id):
+        return JSONResponse({"message": "Event deleted successfully"}, status_code=status.HTTP_202_ACCEPTED)
+    else:
+        return JSONResponse({"message": "Something going wrong"}, status_code=status.HTTP_400_BAD_REQUEST)
 
 """ Sign """
 
 
-@router.get("/signs/", tags=['signs'])
-async def get_signs(current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
+@router.get("/events/{event_id}/signs/", tags=['signs'], response_model=list[SignRetrieve])
+async def get_signs(event_id: int,
+                    current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                     session: AsyncSession = Depends(get_session)):
-    sign_res = await session.execute(select(Sign))
-    sign_objs = sign_res.scalars().all()
-    return sign_objs
+    return await SignService(session).get_by_event(event_id)
 
 
-@router.post("/signs/", tags=['signs'])
-async def create_sign(sign: SignBase,
-                      current_user: UserRetrieve = Security(
-                          get_current_active_user, scopes=['signs']),
+@router.post("/events/{event_id}/signs/", tags=['signs'], response_model=SignRetrieve)
+async def create_sign(event_id: int,
+                      sign: SignBase,
+                      current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                       session: AsyncSession = Depends(get_session)):
-    sign_obj = Sign(user_id=current_user.id,
-                    event_id=sign.event_id, status=sign.status)
-    session.add(sign_obj)
-    await session.commit()
-    return JSONResponse({}, status_code=status.HTTP_201_CREATED)
+    return SignService(session).create(event_id, current_user.id, sign.status)
 
 
 @router.put("/signs/{id}", tags=['signs'])
 async def edit_sign(id: int,
                     sign: SignBase,
-                    current_user: UserRetrieve = Security(
-                        get_current_active_user, scopes=['signs']),
+                    current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                     session: AsyncSession = Depends(get_session)):
-    sign_obj = (await session.execute(select(Sign).where(Sign.id == id))).scalar()
-    if sign_obj.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Not enough permissions")
-    for attr, value in sign:
-        setattr(sign_obj, attr, value)
-    session.add(sign_obj)
-    await session.commit()
-    return JSONResponse({}, status_code=status.HTTP_200_OK)
+    return await SignRepository(session).update(id, sign, current_user.id)
 
 
 @router.delete('/signs/{id}', tags=['signs'])
 async def delete_sign(id: int,
-                      current_user: UserRetrieve = Security(
-                          get_current_active_user, scopes=['signs']),
+                      current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                       session: AsyncSession = Depends(get_session)):
-    sign_obj = (await session.execute(select(Sign).where(Sign.id == id))).scalar()
-    if not sign_obj:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='Sign doesnt exist')
-    await session.delete(sign_obj)
-    await session.commit()
-    return JSONResponse({"message": "Sign deletedu successfully"}, status_code=status.HTTP_202_ACCEPTED)
+    if await SignService(session).delete(id, current_user.id):
+        return JSONResponse({"message": "Sign deletedu successfully"}, status_code=status.HTTP_202_ACCEPTED)
+    else:
+        raise JSONResponse({"message": "Something going wrong"}, status_code=status.HTTP_400_BAD_REQUEST)
+
+
+""" Commentaries """
 
 
 @router.get('/events/{event_id}/commentaries/', tags=['commentaries'], response_model=list[CommentaryBase])
 async def get_commentaries(event_id: int,
-                           current_user: UserRetrieve = Security(
-                               get_current_active_user, scopes=['signs']),
+                           current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                            session: AsyncSession = Depends(get_session)):
-    commentaries = (await session.execute(select(Commentary)
-                                          .where(Commentary.event_id == event_id))).scalars().all()
-    return commentaries
+    return await CommentaryService(session).get_from_event(event_id)
 
 
-@router.post('/events/{event_id}/commentaries/', tags=['commentaries'])
+@router.post('/events/{event_id}/commentaries/', tags=['commentaries'], response_model=CommentaryBase)
 async def create_commentary(event_id: int,
                             commentary: CommentaryBase,
-                            current_user: UserRetrieve = Security(
-                                get_current_active_user, scopes=['signs']),
+                            current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                             session: AsyncSession = Depends(get_session)):
-    commentary_obj = Commentary(event_id=event_id, content=commentary.content)
-    session.add(commentary_obj)
-    await session.commit()
-    return JSONResponse({}, status_code=status.HTTP_201_CREATED)
+    return await CommentaryService(session).create(event_id, commentary.dict(), current_user.id)
 
 
-@router.put('/events/{event_id}/commentaries/{commentary_id}', tags=['commentaries'])
+@router.put('/events/{event_id}/commentaries/{commentary_id}', tags=['commentaries'], response_model=CommentaryBase)
 async def edit_commentary(event_id: int,
                           commentary_id: int,
                           commentary: CommentaryBase,
-                          current_user: UserRetrieve = Security(
-                              get_current_active_user, scopes=['signs']),
+                          current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                           session: AsyncSession = Depends(get_session)):
-    try:
-        await session.execute(update(Commentary)
-                              .where(Commentary.id == commentary_id,
-                                     Commentary.event_id == event_id,
-                                     Commentary.created_by == current_user.id)
-                              .values(content=commentary.content))
-    except:
-        return JSONResponse({}, status_code=status.HTTP_403_FORBIDDEN)
-    finally:
-        return JSONResponse({}, status_code=status.HTTP_200_OK)
+    return await CommentaryService(session).update(commentary_id, commentary, current_user.id)
 
 
 @router.delete('/commentaries/{commentary_id}', tags=['commentaries'])
 async def delete_commentary(commentary_id: int,
-                            current_user: UserRetrieve = Security(
-                                get_current_active_user, scopes=['signs']),
+                            current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                             session: AsyncSession = Depends(get_session)):
-    try:
-        await session.execute(delete(Commentary)
-                              .where(Commentary.id == commentary_id,
-                                     Commentary.created_by == current_user.id))
-    except:
-        return JSONResponse({}, status_code=status.HTTP_403_FORBIDDEN)
-    finally:
-        return JSONResponse({"message": "Sign deletedu successfully"}, status_code=status.HTTP_202_ACCEPTED)
+    if await CommentaryService(session).delete(commentary_id, current_user.id):
+        return JSONResponse({"message": "Commentary deleted successfully"}, status_code=status.HTTP_202_ACCEPTED)
+    else:
+        raise JSONResponse({"message": "Something going wrong"}, status_code=status.HTTP_400_BAD_REQUEST)
+
+
+""" Likes """
+
+
+@router.get('/events/{event_id}/likes/', tags=['likes'], response_model=list[LikeBase])
+async def get_likes(event_id: int,
+                    current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
+                    session: AsyncSession = Depends(get_session)):
+    return await LikeService(session).get_from_event(event_id)
 
 
 @router.get('/likes/', tags=['likes'], response_model=list[LikeBase])
-async def get_likes(current_user: UserRetrieve = Security(
-        get_current_active_user, scopes=['signs']),
-        session: AsyncSession = Depends(get_session)):
-    likes_obj = (await session.execute(select(Like)
-                                       .where(Like.user_id == current_user.id)
-                                       .options(selectinload(Like.event)))).scalars().all()
-    return likes_obj
+async def get_likes(current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
+                    session: AsyncSession = Depends(get_session)):
+    return await LikeService(session).get_by_user_id(current_user.id)
 
 
 @router.post('/events/{event_id}/like/', tags=['likes'])
 async def create_likes(event_id: int,
-                       current_user: UserRetrieve = Security(
-                           get_current_active_user, scopes=['signs']),
+                       current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                        session: AsyncSession = Depends(get_session)):
-    like_obj = Like(event_id=event_id, user_id=current_user.id)
-    session.add(like_obj)
-    await session.commit()
-    return JSONResponse({}, status_code=status.HTTP_201_CREATED)
+    return await LikeService(session).create(event_id, current_user.id)
 
 
 @router.post('/likes/{id}/', tags=['likes'])
 async def delete_like(id: int,
-                      current_user: UserRetrieve = Security(
-                          get_current_active_user, scopes=['signs']),
+                      current_user: UserRetrieve = Security(get_current_active_user, scopes=['signs']),
                       session: AsyncSession = Depends(get_session)):
-    try:
-        await session.execute(delete(Like)
-                              .where(Like.id == id,
-                                     Like.user_id == current_user.id))
-    except:
-        return JSONResponse({}, status_code=status.HTTP_403_FORBIDDEN)
-    finally:
-        return JSONResponse({"message": "Sign deletedu successfully"}, status_code=status.HTTP_202_ACCEPTED)
+    if await LikeService(session).delete(id, current_user.id):
+        return JSONResponse({"message": "Like deleted successfully"}, status_code=status.HTTP_202_ACCEPTED)
+    else:
+        raise JSONResponse({"message": "Something going wrong"}, status_code=status.HTTP_400_BAD_REQUEST)
+    

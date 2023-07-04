@@ -77,15 +77,15 @@ class EventRetrieve(EventCreate):
 
 
 class SignBase(BaseModel):
+    id: int | None
     status: str
-    event_id: int
     
     class Config:
         orm_mode = True
         
         
 class SignRetrieve(SignBase):
-    id: int
+    event_id: int
     user_id: int
     
     
