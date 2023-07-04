@@ -1,14 +1,10 @@
 from apps.auth.dependencies import get_current_active_user
 from apps.users.schemas import UserRetrieve
 from database import get_session
-from fastapi import (APIRouter, Depends, HTTPException, Query, Security,
-                     UploadFile, status)
+from fastapi import APIRouter, Depends, Security, status
 from fastapi.responses import JSONResponse
-from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from . import crud
 from .models import *
 from .schemas import *
 from .services import *
